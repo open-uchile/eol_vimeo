@@ -53,13 +53,16 @@ Add this configuration in `LMS` & `CMS` .yml:
 - Edit the following file to add the upload_vimeo function _/openedx/edx-platform/cms/djangoapps/contentstore/views/videos.py_
 
         from django.db import transaction
-        from eol_vimeo.vimeo_task import task_process_data
         from lms.djangoapps.instructor_task.api_helper import AlreadyRunningError
         ...
         def vimeo_task(request, course_id, data):
             try:
+                from eol_vimeo.vimeo_task import task_process_data
                 task = task_process_data(request, course_id, data)
                 return True
+            except ImportError:
+                LOGGER.info('EolVimeo is not installed')
+                return False
             except AlreadyRunningError:
                 LOGGER.error("EolVimeo - Task Already Running Error, user: {}, course_id: {}".format(request.user, course_id))
                 return False
@@ -69,19 +72,24 @@ Add this configuration in `LMS` & `CMS` .yml:
             ...
             else:
                 if is_status_update_request(request.json):
-                    for video in request.json:
-                        status = video.get('status')
-                        if status == 'upload_completed':
-                            status = 'upload'
-                        update_video_status(video.get('edxVideoId'), status)
-                        LOGGER.info(
-                            u'VIDEOS: Video status update with id [%s], status [%s] and message [%s]',
-                            video.get('edxVideoId'),
-                            status,
-                            video.get('message')
-                        )
-                    status_vimeo_task = vimeo_task(request, course_key_string, request.json)
-                    return JsonResponse()
+                    try:
+                        from eol_vimeo import vimeo_utils
+                        for video in request.json:
+                            status = video.get('status')
+                            if status == 'upload_completed':
+                                status = 'upload'
+                            update_video_status(video.get('edxVideoId'), status)
+                            LOGGER.info(
+                                u'VIDEOS: Video status update with id [%s], status [%s] and message [%s]',
+                                video.get('edxVideoId'),
+                                status,
+                                video.get('message')
+                            )
+                        status_vimeo_task = vimeo_task(request, course_key_string, request.json)
+                        return JsonResponse()
+                    except ImportError:
+                        LOGGER.info('EolVimeo is not installed')
+                        return send_video_status_update(request.json)
                 elif _is_pagination_context_update_request(request):
                     return _update_pagination_context(request)
 
