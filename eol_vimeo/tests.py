@@ -69,7 +69,7 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
     @override_settings(EOL_VIMEO_DOMAINS=['test.cl', 'studio.test.cl'])
     def test_upload_video_to_vimeo(self, get_storage, mock_shutil, upload, get, post, put):
         """
-            Test .
+            Test upload video to vimeo normal process
         """
         get_storage.configure_mock(open=Mock(), delete=Mock())
         mock_shutil.configure_mock(copyfileobj=Mock())
@@ -98,7 +98,7 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
     @override_settings(EOL_VIMEO_DOMAINS=['test.cl', 'studio.test.cl'])
     def test_upload_video_to_vimeo_multiple_video(self, get_storage, mock_shutil, upload, get, put):
         """
-            Test .
+            Test upload video to vimeo normal process with multiple videos
         """
         get_storage.configure_mock(open=Mock(), delete=Mock())
         mock_shutil.configure_mock(copyfileobj=Mock())
@@ -131,7 +131,7 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
     @override_settings(EOL_VIMEO_DOMAINS=['test.cl', 'studio.test.cl'])
     def test_upload_video_to_vimeo_folder_exists(self, get_storage, mock_shutil, upload, get, put):
         """
-            Test .
+            Test upload video to vimeo normal process when folders in vimeo exists
         """
         get_storage.configure_mock(open=Mock(), delete=Mock())
         mock_shutil.configure_mock(copyfileobj=Mock())
@@ -160,7 +160,7 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
     @override_settings(EOL_VIMEO_DOMAINS=['test.cl', 'studio.test.cl'])
     def test_upload_video_to_vimeo_fail_patch(self, get_storage, mock_shutil, upload, get, post, put, mock_update_video):
         """
-            Test .
+            Test upload video to vimeo when fail update in edxval model
         """
         mock_update_video.side_effect = Exception()
         get_storage.configure_mock(open=Mock(), delete=Mock())
@@ -192,7 +192,7 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
     @override_settings(EOL_VIMEO_DOMAINS=['test.cl', 'studio.test.cl'])
     def test_upload_video_to_vimeo_fail_get_video(self, get_storage, mock_shutil, upload, get, post, put):
         """
-            Test .
+            Test upload video to vimeo when fail to get video in vimeo
         """
         get_storage.configure_mock(open=Mock(), delete=Mock())
         mock_shutil.configure_mock(copyfileobj=Mock())
@@ -223,7 +223,7 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
     @override_settings(EOL_VIMEO_DOMAINS=['test.cl', 'studio.test.cl'])
     def test_upload_video_to_vimeo_fail_get_video_no_files(self, get_storage, mock_shutil, upload, get, post, put):
         """
-            Test .
+            Test upload video to vimeo when video in vimeo dont have files
         """
         get_storage.configure_mock(open=Mock(), delete=Mock())
         mock_shutil.configure_mock(copyfileobj=Mock())
@@ -254,7 +254,7 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
     @override_settings(EOL_VIMEO_DOMAINS=['test.cl', 'studio.test.cl'])
     def test_upload_video_to_vimeo_fail_get_video_basic_user(self, get_storage, mock_shutil, upload, get, post, put):
         """
-            Test .
+            Test upload video to vimeo when user vimeo only have basic plan
         """
         get_storage.configure_mock(open=Mock(), delete=Mock())
         mock_shutil.configure_mock(copyfileobj=Mock())
@@ -284,7 +284,7 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
     @override_settings(EOL_VIMEO_DOMAINS=['test.cl', 'studio.test.cl'])
     def test_upload_video_to_vimeo_fail_move_to_folder_get_folders(self, get_storage, mock_shutil, upload, get, put):
         """
-            Test .
+            Test upload video to vimeo when fail get folders in vimeo
         """
         get_storage.configure_mock(open=Mock(), delete=Mock())
         mock_shutil.configure_mock(copyfileobj=Mock())
@@ -313,7 +313,7 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
     @override_settings(EOL_VIMEO_DOMAINS=['test.cl', 'studio.test.cl'])
     def test_upload_video_to_vimeo_fail_move_to_folder_create_folder(self, get_storage, mock_shutil, upload, get, post, put):
         """
-            Test .
+            Test upload video to vimeo when fail create folder in vimeo
         """
         get_storage.configure_mock(open=Mock(), delete=Mock())
         mock_shutil.configure_mock(copyfileobj=Mock())
@@ -344,7 +344,7 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
     @override_settings(EOL_VIMEO_DOMAINS=['test.cl', 'studio.test.cl'])
     def test_upload_video_to_vimeo_fail_move_to_folder_move_video(self, get_storage, mock_shutil, upload, get, post, put):
         """
-            Test .
+            Test upload video to vimeo when fail move video to folder in vimeo
         """
         get_storage.configure_mock(open=Mock(), delete=Mock())
         mock_shutil.configure_mock(copyfileobj=Mock())
@@ -375,7 +375,7 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
     @override_settings(EOL_VIMEO_DOMAINS=['test.cl', 'studio.test.cl'])
     def test_upload_video_to_vimeo_fail_add_domain(self, get_storage, mock_shutil, upload, get, post, put):
         """
-            Test .
+            Test upload video to vimeo when fail add domain to video in vimeo
         """
         get_storage.configure_mock(open=Mock(), delete=Mock())
         mock_shutil.configure_mock(copyfileobj=Mock())
@@ -399,7 +399,7 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
     @override_settings(EOL_VIMEO_CLIENT_TOKEN='1234567890asdfgh')
     def test_upload_video_to_vimeo_fail_upload(self, copy_file):
         """
-            Test .
+            Test upload video to vimeo when fail storage_class 
         """
         copy_file.return_value = 'Error'
 
@@ -416,7 +416,7 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
     @override_settings(EOL_VIMEO_CLIENT_TOKEN='1234567890asdfgh')
     def test_upload_video_to_vimeo_fail_upload_2(self, get_storage, mock_shutil, upload):
         """
-            Test .
+            Test upload video to vimeo when upload video to vimeo
         """
         upload.side_effect = Exception()
         get_storage.configure_mock(open=Mock(), delete=Mock())
@@ -432,7 +432,7 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
     @override_settings(EOL_VIMEO_CLIENT_ID='')
     def test_upload_video_to_vimeo_no_credentials(self, get_storage, mock_shutil):
         """
-            Test .
+            Test upload video to vimeo when credentials are not defined
         """
         get_storage.configure_mock(open=Mock(), delete=Mock())
         mock_shutil.configure_mock(copyfileobj=Mock())
