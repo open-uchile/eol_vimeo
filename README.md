@@ -54,15 +54,16 @@ Add this configuration in `LMS` & `CMS` .yml:
 
         from django.db import transaction
         from lms.djangoapps.instructor_task.api_helper import AlreadyRunningError
+        try:
+            from eol_vimeo.vimeo_task import task_process_data
+            ENABLE_EOL_VIMEO = True
+        except ImportError:
+            ENABLE_EOL_VIMEO = False
         ...
         def vimeo_task(request, course_id, data):
             try:
-                from eol_vimeo.vimeo_task import task_process_data
                 task = task_process_data(request, course_id, data)
                 return True
-            except ImportError:
-                LOGGER.info('EolVimeo is not installed')
-                return False
             except AlreadyRunningError:
                 LOGGER.error("EolVimeo - Task Already Running Error, user: {}, course_id: {}".format(request.user, course_id))
                 return False
@@ -72,11 +73,12 @@ Add this configuration in `LMS` & `CMS` .yml:
             ...
             else:
                 if is_status_update_request(request.json):
-                    try:
-                        from eol_vimeo import vimeo_utils
+                    if ENABLE_EOL_VIMEO:
+                        upload_completed_videos = []
                         for video in request.json:
                             status = video.get('status')
                             if status == 'upload_completed':
+                                upload_completed_videos.append(video)
                                 status = 'upload'
                             update_video_status(video.get('edxVideoId'), status)
                             LOGGER.info(
@@ -85,9 +87,10 @@ Add this configuration in `LMS` & `CMS` .yml:
                                 status,
                                 video.get('message')
                             )
-                        status_vimeo_task = vimeo_task(request, course_key_string, request.json)
+                        if len(upload_completed_videos) > 0:
+                            status_vimeo_task = vimeo_task(request, course_key_string, upload_completed_videos)
                         return JsonResponse()
-                    except ImportError:
+                    else:
                         LOGGER.info('EolVimeo is not installed')
                         return send_video_status_update(request.json)
                 elif _is_pagination_context_update_request(request):
@@ -95,6 +98,57 @@ Add this configuration in `LMS` & `CMS` .yml:
 
                 data, status = videos_post(course, request)
                 return JsonResponse(data, status=status)
+        ...
+        def videos_post(course, request):
+            ...
+            key = storage_service_key(bucket, file_name=edx_video_id)
+            if ENABLE_EOL_VIMEO:
+                upload_url = key.generate_url(
+                    KEY_EXPIRATION_IN_SECONDS,
+                    'PUT'
+                )
+            else:
+                metadata_list = [
+                    ('client_video_id', file_name),
+                    ('course_key', six.text_type(course.id)),
+                ]
+                deprecate_youtube = waffle_flags()[DEPRECATE_YOUTUBE]
+                course_video_upload_token = course.video_upload_pipeline.get('course_video_upload_token')
+
+                # Only include `course_video_upload_token` if youtube has not been deprecated
+                # for this course.
+                if not deprecate_youtube.is_enabled(course.id) and course_video_upload_token:
+                    metadata_list.append(('course_video_upload_token', course_video_upload_token))
+
+                is_video_transcript_enabled = VideoTranscriptEnabledFlag.feature_enabled(course.id)
+                if is_video_transcript_enabled:
+                    transcript_preferences = get_transcript_preferences(six.text_type(course.id))
+                    if transcript_preferences is not None:
+                        metadata_list.append(('transcript_preferences', json.dumps(transcript_preferences)))
+
+                for metadata_name, value in metadata_list:
+                    key.set_metadata(metadata_name, value)
+                upload_url = key.generate_url(
+                    KEY_EXPIRATION_IN_SECONDS,
+                    'PUT',
+                    headers={'Content-Type': req_file['content_type']}
+        ...
+        def storage_service_bucket():
+            if waffle_flags()[ENABLE_DEVSTACK_VIDEO_UPLOADS].is_enabled():
+                params = {
+                    'aws_access_key_id': settings.AWS_ACCESS_KEY_ID,
+                    'aws_secret_access_key': settings.AWS_SECRET_ACCESS_KEY,
+                    'security_token': settings.AWS_SECURITY_TOKEN,
+                    'host': settings.AWS_S3_ENDPOINT_DOMAIN
+                }
+            else:
+                params = {
+                    'aws_access_key_id': settings.AWS_ACCESS_KEY_ID,
+                    'aws_secret_access_key': settings.AWS_SECRET_ACCESS_KEY,
+                    'host': settings.AWS_S3_ENDPOINT_DOMAIN
+                }
+            conn = s3.connection.S3Connection(**params)
+            return conn.get_bucket(settings.VIDEO_UPLOAD_PIPELINE['VEM_S3_BUCKET'], validate=False)
 
 ## TESTS
 **Prepare tests:**
@@ -106,3 +160,4 @@ Add this configuration in `LMS` & `CMS` .yml:
 - The video is deleted from the storage once uploaded to vimeo, if the video has a status other than 'upload_completed' at the beginning of the task, it will not be deleted.
 - If you delete a video from the video table, it will not be deleted, it will only change the 'status' of the video.
 - The link of the video obtained from vimeo to view, is an initial link because the video is still being processed when the link is obtained.
+- If status video is 'upload' for 24 hours it change to 'upload_failed'.
