@@ -154,6 +154,10 @@ Add this configuration in `LMS` & `CMS` .yml:
             conn = s3.connection.S3Connection(**params)
             return conn.get_bucket(settings.VIDEO_UPLOAD_PIPELINE['VEM_S3_BUCKET'], validate=False)
 
+## Update Video link
+
+    > docker-compose exec cms python manage.py cms --settings=prod.production vimeo_update_url_videos
+
 ## TESTS
 **Prepare tests:**
 
