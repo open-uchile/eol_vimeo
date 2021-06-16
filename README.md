@@ -8,6 +8,8 @@ Upload videos to vimeo
 
     docker-compose exec cms pip install -e /openedx/requirements/eol_vimeo
     docker-compose exec cms_worker pip install -e /openedx/requirements/eol_vimeo
+    docker-compose exec cms python manage.py cms --settings=prod.production makemigrations
+    docker-compose exec cms python manage.py cms --settings=prod.production migrate
 
 # Configuration Vimeo
 
@@ -56,6 +58,7 @@ Add this configuration in `LMS` & `CMS` .yml:
         from lms.djangoapps.instructor_task.api_helper import AlreadyRunningError
         try:
             from eol_vimeo.vimeo_task import task_process_data
+            from eol_vimeo.vimeo_utils import update_create_vimeo_model
             ENABLE_EOL_VIMEO = True
         except ImportError:
             ENABLE_EOL_VIMEO = False
@@ -81,6 +84,7 @@ Add this configuration in `LMS` & `CMS` .yml:
                                 upload_completed_videos.append(video)
                                 status = 'upload'
                             update_video_status(video.get('edxVideoId'), status)
+                            update_create_vimeo_model(video.get('edxVideoId'), request.user.id, status, video.get('message'), course_key_string)
                             LOGGER.info(
                                 u'VIDEOS: Video status update with id [%s], status [%s] and message [%s]',
                                 video.get('edxVideoId'),

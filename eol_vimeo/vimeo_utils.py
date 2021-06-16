@@ -24,6 +24,7 @@ import shutil
 from edxval.models import Video
 from edxval.api import update_video, _get_video
 from django.core.files.storage import get_storage_class
+from .models import EolVimeoVideo
 logger = logging.getLogger(__name__)
 
 def get_storage():
@@ -37,6 +38,17 @@ def check_credentials():
         Check if credentials are defined
     """
     return settings.EOL_VIMEO_CLIENT_TOKEN != '' and settings.EOL_VIMEO_CLIENT_ID != '' and settings.EOL_VIMEO_CLIENT_SECRET != ''
+
+def get_client_vimeo():
+    if not check_credentials():
+        logger.info('EolVimeo - Credentials are not defined')
+        return None
+    client = vimeo.VimeoClient(
+        token=settings.EOL_VIMEO_CLIENT_TOKEN,
+        key=settings.EOL_VIMEO_CLIENT_ID,
+        secret=settings.EOL_VIMEO_CLIENT_SECRET
+    )
+    return client
 
 def copy_file(id_file):
     """
@@ -57,7 +69,7 @@ def copy_file(id_file):
         logger.info('EolVimeo - The id_file does not exists, id_file: {}'.format(id_file))
         return 'Error'
 
-def update_edxval_url(edx_video_id, video_url, file_size, file_name, duration):
+def update_edxval_url(edx_video_id, video_url, file_size, file_name, duration, status):
     """
         Update video in edxval model with vimeo url
     """
@@ -73,7 +85,7 @@ def update_edxval_url(edx_video_id, video_url, file_size, file_name, duration):
         "client_video_id": file_name,
         "edx_video_id": edx_video_id,
         "duration": duration,
-        "status": "upload_completed"
+        "status": status
     }
     try:
         aux_id = update_video(data)
@@ -86,14 +98,9 @@ def add_domain_to_video(video_id):
     """
         This method adds the specified domain to a video's whitelist.
     """
-    if not check_credentials():
-        logger.info('EolVimeo - Credentials are not defined')
+    client = get_client_vimeo()
+    if client is None:
         return False
-    client = vimeo.VimeoClient(
-        token=settings.EOL_VIMEO_CLIENT_TOKEN,
-        key=settings.EOL_VIMEO_CLIENT_ID,
-        secret=settings.EOL_VIMEO_CLIENT_SECRET
-    )
     domains = settings.EOL_VIMEO_DOMAINS
     is_added = True
     for domain in domains:
@@ -109,14 +116,9 @@ def get_video_vimeo(id_video):
     """
         Get the video data from vimeo
     """
-    if not check_credentials():
-        logger.info('EolVimeo - Credentials are not defined')
+    client = get_client_vimeo()
+    if client is None:
         return {}
-    client = vimeo.VimeoClient(
-        token=settings.EOL_VIMEO_CLIENT_TOKEN,
-        key=settings.EOL_VIMEO_CLIENT_ID,
-        secret=settings.EOL_VIMEO_CLIENT_SECRET
-    )
     try:
         response = client.get('/videos/{}'.format(id_video), params={"fields": "name,duration,files"})
         if response.status_code == 200:
@@ -133,14 +135,9 @@ def move_to_folder(id_video):
         Check if main folder exists in vimeo to move the video there, if not exists, create the folder
         Only check first 100 folders in ascending order
     """
-    if not check_credentials():
-        logger.info('EolVimeo - Credentials are not defined')
+    client = get_client_vimeo()
+    if client is None:
         return False
-    client = vimeo.VimeoClient(
-        token=settings.EOL_VIMEO_CLIENT_TOKEN,
-        key=settings.EOL_VIMEO_CLIENT_ID,
-        secret=settings.EOL_VIMEO_CLIENT_SECRET
-    )
     next_response = True
     uri_folder = ''
     uri_folder, next_response = get_folders(1, client)
@@ -216,14 +213,9 @@ def upload(file_name, id_file):
     """
         Upload the video file to Vimeo
     """
-    if not check_credentials():
-        logger.info('EolVimeo - Credentials are not defined')
+    client = get_client_vimeo()
+    if client is None:
         return 'Error'
-    client = vimeo.VimeoClient(
-        token=settings.EOL_VIMEO_CLIENT_TOKEN,
-        key=settings.EOL_VIMEO_CLIENT_ID,
-        secret=settings.EOL_VIMEO_CLIENT_SECRET
-    )
     try:
         video = _get_video(id_file)
         uri = client.upload(file_name, data={
@@ -239,3 +231,58 @@ def upload(file_name, id_file):
     except (Exception, vimeo.exceptions.VideoUploadFailure) as e:
         logger.exception('EolVimeo - Error uploading: {}, Exception'.format(file_name, str(e)))
         return 'Error'
+
+def get_link_video(video_data):
+    """
+        video_data['files'] has different links depending on the video quality (resolution and fps)
+        this function return 720p30fps or 720p60fps or best quality link
+    """
+    video30 = {}
+    video60 = {}
+    for video in video_data['files']:
+        if video['quality'] == 'hd' and video['height'] == 720 and video['fps'] < 32:
+            video30 = video
+        if video['quality'] == 'hd' and video['height'] == 720 and video['fps'] > 32:
+            video60 = video
+    if video30 or video60:
+        return video30 or video60
+    else:
+        #if not found 720p video return best quality link
+        return get_link_video_best_quality(video_data)
+
+def get_link_video_best_quality(video_data):
+    """
+        video_data['files'] has different links depending on the video quality (resolution and fps)
+        this function return best quality link
+    """
+    data = {}
+    for video in video_data['files']:
+        if video['quality'] != 'hls':
+            aux = int('{}{}'.format(video['height'],int(video['fps'])))
+            data[aux] = video
+    sort_key = sorted([x for x in data], reverse=True)
+    #return best quality link
+    return data[sort_key[0]]
+
+def update_create_vimeo_model(edxVideoId, user_id, status, message, course_key_string, url='', vimeo_id=''):
+    """
+        Create or Update EolVimeoVideo
+    """
+    data = {
+        'status':status,
+        'error_description':message
+    }
+    if url != '':
+        data['url_vimeo'] = url
+    if vimeo_id != '':
+        data['vimeo_video_id'] = vimeo_id
+    try:
+        course_key = CourseKey.from_string(course_key_string)
+        data['course_key'] = course_key
+    except InvalidKeyError:
+        logger.info('EolVimeo - Invalid CourseKey course_key: {}.'.format(course_key_string))
+    logger.info('EolVimeo - User: {}.'.format(user_id))
+    EolVimeoVideo.objects.update_or_create(
+            user_id=user_id,
+            edx_video_id=edxVideoId,
+            defaults=data)

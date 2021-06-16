@@ -32,6 +32,7 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
     def setUp(self):
         super(TestEolVimeo, self).setUp()
         # create a course
+        self.maxDiff = None
         self.course = CourseFactory.create(
             org='mss', course='999', display_name='eol_test_course')
 
@@ -85,7 +86,8 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
         
         data = [{'edxVideoId': self.video['edx_video_id'], 'status':'upload_completed', 'message': ''}]
         response = vimeo_task.upload_vimeo(data)
-        self.assertEqual(response, data)
+        data2 = [{'edxVideoId': self.video['edx_video_id'], 'status':'vimeo_encoding', 'message': '', 'vimeo_link':'https://player.vimeo.com/external/1122233344', 'vimeo_id':'123456789'}]
+        self.assertEqual(response, data2)
 
     @patch('requests.put')
     @patch('requests.get')
@@ -118,7 +120,12 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
                 {'edxVideoId': '456', 'status':'upload_failed', 'message': ''},
                 {'edxVideoId': '789', 'status':'upload_cancelled', 'message': ''}]
         response = vimeo_task.upload_vimeo(data)
-        self.assertEqual(response, data)
+        data2 = [{'edxVideoId': self.video['edx_video_id'], 'status':'vimeo_encoding', 'message': '', 'vimeo_link':'https://player.vimeo.com/external/1122233344', 'vimeo_id':'123456789'},
+                {'edxVideoId': '123', 'status':'upload', 'message': ''},
+                {'edxVideoId': self.video2['edx_video_id'], 'status':'vimeo_encoding', 'message': '', 'vimeo_link':'https://player.vimeo.com/external/1122233344', 'vimeo_id':'123456789'},
+                {'edxVideoId': '456', 'status':'upload_failed', 'message': ''},
+                {'edxVideoId': '789', 'status':'upload_cancelled', 'message': ''}]
+        self.assertEqual(response, data2)
 
     @patch('requests.put')
     @patch('requests.get')
@@ -145,7 +152,8 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
         
         data = [{'edxVideoId': self.video['edx_video_id'], 'status':'upload_completed', 'message': ''}]
         response = vimeo_task.upload_vimeo(data)
-        self.assertEqual(response, data)
+        data2 = [{'edxVideoId': self.video['edx_video_id'], 'status':'vimeo_encoding', 'message': '', 'vimeo_link':'https://player.vimeo.com/external/1122233344', 'vimeo_id':'123456789'}]
+        self.assertEqual(response, data2)
 
     @patch("eol_vimeo.vimeo_utils.update_video")
     @patch('requests.put')
@@ -177,7 +185,7 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
         
         data = [{'edxVideoId': self.video['edx_video_id'], 'status':'upload_completed', 'message': ''}]
         response = vimeo_task.upload_vimeo(data)
-        data2 = [{'edxVideoId': self.video['edx_video_id'], 'status':'upload_failed', 'message': 'No se pudo agregar el path vimeo del video al video en plataforma(error update_video in edxval.api). '}]
+        data2 = [{'edxVideoId': self.video['edx_video_id'], 'status':'upload_failed', 'message': 'No se pudo agregar el path vimeo del video al video en plataforma(error update_video in edxval.api). ', 'vimeo_link':'https://player.vimeo.com/external/1122233344', 'vimeo_id':'123456789'}]
         self.assertEqual(response, data2)
 
     @patch('requests.put')
@@ -208,7 +216,7 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
         
         data = [{'edxVideoId': self.video['edx_video_id'], 'status':'upload_completed', 'message': ''}]
         response = vimeo_task.upload_vimeo(data)
-        data2 = [{'edxVideoId': self.video['edx_video_id'], 'status':'upload_failed', 'message': 'No se pudo obtener el video en Vimeo. '}]
+        data2 = [{'edxVideoId': self.video['edx_video_id'], 'status':'upload_failed', 'message': 'No se pudo obtener el video en Vimeo. ', 'vimeo_link':'', 'vimeo_id':'123456789'}]
         self.assertEqual(response, data2)
 
     @patch('requests.put')
@@ -239,7 +247,7 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
         
         data = [{'edxVideoId': self.video['edx_video_id'], 'status':'upload_completed', 'message': ''}]
         response = vimeo_task.upload_vimeo(data)
-        data2 = [{'edxVideoId': self.video['edx_video_id'], 'status':'upload_failed', 'message': 'No se pudo obtener el video en Vimeo. '}]
+        data2 = [{'edxVideoId': self.video['edx_video_id'], 'status':'upload_failed', 'message': 'No se pudo obtener el video en Vimeo. ', 'vimeo_link':'', 'vimeo_id':'123456789'}]
         self.assertEqual(response, data2)
 
     @patch('requests.put')
@@ -270,7 +278,7 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
         
         data = [{'edxVideoId': self.video['edx_video_id'], 'status':'upload_completed', 'message': ''}]
         response = vimeo_task.upload_vimeo(data)
-        data2 = [{'edxVideoId': self.video['edx_video_id'], 'status':'upload_failed', 'message': 'No se pudo obtener el video en Vimeo. '}]
+        data2 = [{'edxVideoId': self.video['edx_video_id'], 'status':'upload_failed', 'message': 'No se pudo obtener el video en Vimeo. ', 'vimeo_link':'', 'vimeo_id':'123456789'}]
         self.assertEqual(response, data2)
 
     @patch('requests.put')
@@ -298,7 +306,7 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
 
         data = [{'edxVideoId': self.video['edx_video_id'], 'status':'upload_completed', 'message': ''}]
         response = vimeo_task.upload_vimeo(data)
-        data2 = [{'edxVideoId': self.video['edx_video_id'], 'status':'upload_completed', 'message': 'No se pudo mover el video a la carpeta principal en Vimeo. '}]
+        data2 = [{'edxVideoId': self.video['edx_video_id'], 'status':'vimeo_encoding', 'message': 'No se pudo mover el video a la carpeta principal en Vimeo. ', 'vimeo_link':'https://player.vimeo.com/external/1122233344', 'vimeo_id':'123456789'}]
         self.assertEqual(response, data2)
 
     @patch('requests.put')
@@ -329,7 +337,7 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
         
         data = [{'edxVideoId': self.video['edx_video_id'], 'status':'upload_completed', 'message': ''}]
         response = vimeo_task.upload_vimeo(data)
-        data2 = [{'edxVideoId': self.video['edx_video_id'], 'status':'upload_completed', 'message': 'No se pudo mover el video a la carpeta principal en Vimeo. '}]
+        data2 = [{'edxVideoId': self.video['edx_video_id'], 'status':'vimeo_encoding', 'message': 'No se pudo mover el video a la carpeta principal en Vimeo. ', 'vimeo_link':'https://player.vimeo.com/external/1122233344', 'vimeo_id':'123456789'}]
         self.assertEqual(response, data2)
 
     @patch('requests.put')
@@ -360,7 +368,7 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
         
         data = [{'edxVideoId': self.video['edx_video_id'], 'status':'upload_completed', 'message': ''}]
         response = vimeo_task.upload_vimeo(data)
-        data2 = [{'edxVideoId': self.video['edx_video_id'], 'status':'upload_completed', 'message': 'No se pudo mover el video a la carpeta principal en Vimeo. '}]
+        data2 = [{'edxVideoId': self.video['edx_video_id'], 'status':'vimeo_encoding', 'message': 'No se pudo mover el video a la carpeta principal en Vimeo. ', 'vimeo_link':'https://player.vimeo.com/external/1122233344', 'vimeo_id':'123456789'}]
         self.assertEqual(response, data2)
 
     @patch('requests.put')
@@ -390,7 +398,7 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
         
         data = [{'edxVideoId': self.video['edx_video_id'], 'status':'upload_completed', 'message': ''}]
         response = vimeo_task.upload_vimeo(data)
-        data2 = [{'edxVideoId': self.video['edx_video_id'], 'status':'upload_completed', 'message': 'No se pudo agregar los dominios al video en Vimeo. '}]
+        data2 = [{'edxVideoId': self.video['edx_video_id'], 'status':'vimeo_encoding', 'message': 'No se pudo agregar los dominios al video en Vimeo. ', 'vimeo_link':'https://player.vimeo.com/external/1122233344', 'vimeo_id':'123456789'}]
         self.assertEqual(response, data2)
 
     @patch("eol_vimeo.vimeo_utils.copy_file")
@@ -405,7 +413,7 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
 
         data = [{'edxVideoId': self.video['edx_video_id'], 'status':'upload_completed', 'message': ''}]
         response = vimeo_task.upload_vimeo(data)
-        data2 = [{'edxVideoId': self.video['edx_video_id'], 'status':'upload_failed', 'message': 'No se pudo subir el video a Vimeo. '}]
+        data2 = [{'edxVideoId': self.video['edx_video_id'], 'status':'upload_failed', 'message': 'No se pudo subir el video a Vimeo. ', 'vimeo_link':'', 'vimeo_id':''}]
         self.assertEqual(response, data2)
     
     @patch("eol_vimeo.vimeo_utils.vimeo.VimeoClient.upload")
@@ -424,7 +432,7 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
 
         data = [{'edxVideoId': self.video['edx_video_id'], 'status':'upload_completed', 'message': ''}]
         response = vimeo_task.upload_vimeo(data)
-        data2 = [{'edxVideoId': self.video['edx_video_id'], 'status':'upload_failed', 'message': 'No se pudo subir el video a Vimeo. '}]
+        data2 = [{'edxVideoId': self.video['edx_video_id'], 'status':'upload_failed', 'message': 'No se pudo subir el video a Vimeo. ', 'vimeo_link':'', 'vimeo_id':''}]
         self.assertEqual(response, data2)
 
     @patch("eol_vimeo.vimeo_utils.shutil")
@@ -439,5 +447,5 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
 
         data = [{'edxVideoId': self.video['edx_video_id'], 'status':'upload_completed', 'message': ''}]
         response = vimeo_task.upload_vimeo(data)
-        data2 = [{'edxVideoId': self.video['edx_video_id'], 'status':'upload_failed', 'message': 'No se pudo subir el video a Vimeo. '}]
+        data2 = [{'edxVideoId': self.video['edx_video_id'], 'status':'upload_failed', 'message': 'No se pudo subir el video a Vimeo. ', 'vimeo_link':'', 'vimeo_id':''}]
         self.assertEqual(response, data2)

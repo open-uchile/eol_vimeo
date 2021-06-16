@@ -17,7 +17,9 @@ from .vimeo_utils import (
     add_domain_to_video,
     move_to_folder,
     get_video_vimeo,
-    update_edxval_url
+    update_edxval_url,
+    update_create_vimeo_model,
+    get_link_video
     )
 from celery import current_task, task
 from lms.djangoapps.instructor_task.tasks_base import BaseInstructorTask
@@ -40,7 +42,7 @@ def upload_vimeo(data):
     """
     response = []
     for video in data:
-        video_info = {'edxVideoId': video.get('edxVideoId'), 'status':'', 'message': ''}
+        video_info = {'edxVideoId': video.get('edxVideoId'), 'status':'', 'message': '', 'vimeo_link':'', 'vimeo_id':''}
         if video.get('status') == 'upload_completed':
             uri_video = copy_file(video.get('edxVideoId'))
             if uri_video == 'Error':
@@ -56,18 +58,27 @@ def upload_vimeo(data):
                     video_info['message'] = video_info['message'] + 'No se pudo mover el video a la carpeta principal en Vimeo. '
                     logger.info('{} was not moved'.format(uri_video))
                 video_data = get_video_vimeo(uri_video.split('/')[-1])
+                video_info['vimeo_id'] = uri_video.split('/')[-1]
                 if len(video_data) == 0 or 'files' not in video_data or len(video_data['files']) == 0:
                     video_info['status'] = 'upload_failed'
                     video_info['message'] = video_info['message'] + 'No se pudo obtener el video en Vimeo. '
                 else:
                     quality_video = get_link_video(video_data)
                     video_name = '{} {}'.format(video_data['name'], quality_video['public_name'])
-                    is_updated = update_edxval_url(video.get('edxVideoId'), quality_video['link'], quality_video['size'], video_name, video_data['duration'])
+                    video_info['vimeo_link'] = quality_video['link']
+                    is_updated = update_edxval_url(video.get('edxVideoId'), quality_video['link'], quality_video['size'], video_name, video_data['duration'], 'vimeo_encoding')
                     if is_updated:
-                        video_info['status'] = 'upload_completed'
+                        video_info['status'] = 'vimeo_encoding'
                     else:
                         video_info['status'] = 'upload_failed'
                         video_info['message'] = video_info['message'] + 'No se pudo agregar el path vimeo del video al video en plataforma(error update_video in edxval.api). '
+                        update_video_status(video_info.get('edxVideoId'), video_info.get('status'))
+                        logger.info(
+                            u'VIDEOS: Video status update with id [%s], status [%s] and message [%s]',
+                            video_info.get('edxVideoId'),
+                            video_info.get('status'),
+                            video_info.get('message')
+                        )
             response.append(video_info)
         else:
             response.append(video)
@@ -87,26 +98,21 @@ def task_get_data(
         task_input,
         action_name):
     course_key = course_id
+    user_id = task_input['user']
     start_time = time()
     task_progress = TaskProgress(action_name, 1, start_time)
 
     response = upload_vimeo(task_input['data'])
+    for video in response:
+        update_create_vimeo_model(video['edxVideoId'], user_id, video['status'], video['message'], str(course_id), url=video['vimeo_link'], vimeo_id=video['vimeo_id'])
     current_step = {'step': 'Uploading Video to Vimeo'}
-    for update in response:
-        update_video_status(update.get('edxVideoId'), update.get('status'))
-        logger.info(
-            u'VIDEOS: Video status update with id [%s], status [%s] and message [%s]',
-            update.get('edxVideoId'),
-            update.get('status'),
-            update.get('message')
-        )
     return task_progress.update_task_state(extra_meta=current_step)
 
 def task_process_data(request, course_id, data):
     course_key = CourseKey.from_string(course_id)
     task_type = 'EOL_VIMEO'
     task_class = process_data
-    task_input = {'course_id': course_id, 'data': data}
+    task_input = {'course_id': course_id, 'data': data, 'user':request.user.id}
     if len(data) > 0:
         task_key = "{}_{}_{}".format(course_id, request.user.id, data[0]['edxVideoId'])
     else:
@@ -118,17 +124,3 @@ def task_process_data(request, course_id, data):
         course_key,
         task_input,
         task_key)
-
-def get_link_video(video_data):
-    """
-        video_data['files'] has different links depending on the video quality (resolution and fps)
-        this function return best quality link
-    """
-    data = {}
-    for video in video_data['files']:
-        if video['quality'] != 'hls':
-            aux = int('{}{}'.format(video['height'],int(video['fps'])))
-            data[aux] = video
-    sort_key = sorted([x for x in data], reverse=True)
-    #return best quality link
-    return data[sort_key[0]]
