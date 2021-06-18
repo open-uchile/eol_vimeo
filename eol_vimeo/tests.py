@@ -6,7 +6,7 @@ from django.test import TestCase, Client
 from django.test.client import RequestFactory
 from django.urls import reverse
 from django.contrib.auth.models import User
-from util.testing import UrlResetMixin
+from common.djangoapps.util.testing import UrlResetMixin
 from xmodule.modulestore import ModuleStoreEnum
 from xmodule.modulestore.tests.django_utils import ModuleStoreTestCase
 from xmodule.modulestore.django import modulestore

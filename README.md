@@ -63,6 +63,10 @@ Add this configuration in `LMS` & `CMS` .yml:
         except ImportError:
             ENABLE_EOL_VIMEO = False
         ...
+        class StatusDisplayStrings:
+            ...
+            _STATUS_MAP["vimeo_encoding"] = _IN_PROGRESS
+        ...
         def vimeo_task(request, course_id, data):
             try:
                 task = task_process_data(request, course_id, data)
@@ -114,7 +118,7 @@ Add this configuration in `LMS` & `CMS` .yml:
             else:
                 metadata_list = [
                     ('client_video_id', file_name),
-                    ('course_key', six.text_type(course.id)),
+                    ('course_key', str(course.id)),
                 ]
                 deprecate_youtube = waffle_flags()[DEPRECATE_YOUTUBE]
                 course_video_upload_token = course.video_upload_pipeline.get('course_video_upload_token')
@@ -126,7 +130,7 @@ Add this configuration in `LMS` & `CMS` .yml:
 
                 is_video_transcript_enabled = VideoTranscriptEnabledFlag.feature_enabled(course.id)
                 if is_video_transcript_enabled:
-                    transcript_preferences = get_transcript_preferences(six.text_type(course.id))
+                    transcript_preferences = get_transcript_preferences(str(course.id))
                     if transcript_preferences is not None:
                         metadata_list.append(('transcript_preferences', json.dumps(transcript_preferences)))
 
@@ -135,7 +139,7 @@ Add this configuration in `LMS` & `CMS` .yml:
                 upload_url = key.generate_url(
                     KEY_EXPIRATION_IN_SECONDS,
                     'PUT',
-                    headers={'Content-Type': req_file['content_type']}
+                    headers={'Content-Type': req_file['content_type']})
         ...
         def storage_service_bucket():
             if waffle_flags()[ENABLE_DEVSTACK_VIDEO_UPLOADS].is_enabled():
