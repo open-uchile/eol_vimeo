@@ -11,9 +11,8 @@ jobs:
     - uses: actions/checkout@v1
     - name: Create coverage config file
       run: |
-        touch .coveragerc
-        ls
         echo -e "[run] \nomit = eol_vimeo/migrations/*" > .coveragerc
+        ls
     - name: Run Tests
       run: |
         cd .github/
