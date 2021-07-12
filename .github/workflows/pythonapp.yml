@@ -10,6 +10,9 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: Run Tests
-      run: |        
+      run: |
         cd .github/
         docker-compose run cms /openedx/requirements/eol_vimeo/.github/test.sh
+    - name: Push changes
+      run: |
+        ./.github/commit.sh ${{ secrets.GITHUB_TOKEN }}

@@ -1,6 +1,6 @@
 # EOL Vimeo
 
-![https://github.com/eol-uchile/eol_vimeo/actions](https://github.com/eol-uchile/eol_vimeo/workflows/Python%20application/badge.svg)
+![https://github.com/eol-uchile/eol_vimeo/actions](https://github.com/eol-uchile/eol_vimeo/workflows/Python%20application/badge.svg) ![Coverage Status](https://github.com/eol-uchile/eol_vimeo/blob/master/coverage-badge.svg)
 
 Upload videos to vimeo
 

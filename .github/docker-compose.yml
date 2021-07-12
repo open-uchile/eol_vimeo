@@ -14,7 +14,7 @@ services:
     restart: unless-stopped
 
   cms:
-    image: eoluchile/edx-platform:testing-lilac
+    image: ghcr.io/eol-uchile/edx-platform:testing-lilac
     volumes:
       - ../:/openedx/requirements/eol_vimeo
     depends_on:
