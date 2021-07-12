@@ -18,6 +18,6 @@ sed -i '/--json-report/c addopts = --nomigrations --reuse-db --durations=20 --js
 
 cd /openedx/edx-platform
 EDXAPP_TEST_MONGO_HOST=mongodb python -Wd -m pytest --ds=cms.envs.test --junitxml=/openedx/edx-platform/reports/cms/nosetests.xml /openedx/requirements/eol_vimeo/eol_vimeo/tests.py
-
+migrations
 cd /openedx/requirements/eol_vimeo
 genbadge coverage
