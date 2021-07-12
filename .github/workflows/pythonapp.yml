@@ -12,7 +12,7 @@ jobs:
     - name: Create coverage config file
       run: |
         touch .coveragerc
-        echo -e "[run] \nomit = migrations/*" > .coveragerc
+        echo -e "[run] \nomit = eol_vimeo/migrations/*" > .coveragerc
     - name: Run Tests
       run: |
         cd .github/
