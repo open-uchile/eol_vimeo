@@ -9,6 +9,10 @@ jobs:
 
     steps:
     - uses: actions/checkout@v1
+    - name: Create coverage config file
+      run: |
+        touch .coveragerc
+        echo -e "[run] \nomit = /openedx/requirements/eol_vimeo/eol_vimeo/migrations/*" > .coveragerc
     - name: Run Tests
       run: |
         cd .github/

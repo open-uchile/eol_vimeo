@@ -10,9 +10,6 @@ mkdir test_root
 cd test_root/
 ln -s /openedx/staticfiles .
 cd ..
-
-touch .coveragerc
-echo -e "[run] \nomit = /openedx/requirements/eol_vimeo/eol_vimeo/migrations/*" > .coveragerc
 #openedx-assets collect --settings=prod.assets
 
 cd /openedx/requirements/eol_vimeo
