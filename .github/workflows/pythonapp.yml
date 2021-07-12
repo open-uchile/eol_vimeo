@@ -12,7 +12,6 @@ jobs:
     - name: Create coverage config file
       run: |
         echo -e "[run] \nomit = eol_vimeo/migrations/*" > .coveragerc
-        cat .coveragerc
     - name: Run Tests
       run: |
         cd .github/
