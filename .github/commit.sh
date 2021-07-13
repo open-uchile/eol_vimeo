@@ -3,12 +3,10 @@
 prepare_commit() {
   git config --global user.name "eolito"
   git config --global user.email 'eol-uchile@users.noreply.github.com'
-  git config pull.rebase false
-  git pull origin master
   git add coverage-badge.svg
   git commit -m "Update coverage badge" 2> /dev/null
   if [ $? -eq 0 ]; then
-    git push https://konialtamirano:$1@github.com/eol-uchile/eol_vimeo.git HEAD:master;
+    git push -f https://konialtamirano:$1@github.com/eol-uchile/eol_vimeo.git HEAD:master;
   else
     echo "Skipped";
   fi
