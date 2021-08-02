@@ -22,7 +22,7 @@ import vimeo
 import tempfile
 import shutil
 from edxval.models import Video
-from edxval.api import update_video, _get_video
+from edxval.api import update_video, _get_video, get_video_info
 from django.core.files.storage import get_storage_class
 from .models import EolVimeoVideo
 logger = logging.getLogger(__name__)
@@ -286,3 +286,53 @@ def update_create_vimeo_model(edxVideoId, user_id, status, message, course_key_s
             user_id=user_id,
             edx_video_id=edxVideoId,
             defaults=data)
+
+def duplicate_video(edx_val_id, old_course_key, new_course_key, user=None):
+    """
+        Duplicate a specific video in another course
+    """
+    if EolVimeoVideo.objects.filter(edx_video_id=edx_val_id, course_key=old_course_key).exists() and not EolVimeoVideo.objects.filter(edx_video_id=edx_val_id, course_key=new_course_key).exists() :
+        vid_vimeo = EolVimeoVideo.objects.get(edx_video_id=edx_val_id, course_key=old_course_key)
+        EolVimeoVideo.objects.create(
+            edx_video_id = vid_vimeo.edx_video_id,
+            user = user if user else vid_vimeo.user,
+            vimeo_video_id = vid_vimeo.vimeo_video_id,
+            course_key = new_course_key,
+            url_vimeo = vid_vimeo.url_vimeo,
+            status = vid_vimeo.status,
+            error_description = vid_vimeo.error_description
+        )
+        logger.info('EolVimeo - Duplicate video {} from {} to {}'.format(edx_val_id, old_course_key, new_course_key))
+        video = get_video_info(edx_val_id)
+        course = {str(new_course_key): None}
+        if course not in video['courses']:
+            video['courses'] = [course]
+            try:
+                aux_id = update_video(video)
+            except Exception as e:
+                logger.exception('EolVimeo - Error to update video path, id_video: {}, exception: {}'.format(edx_val_id, str(e)))
+        else:
+            logger.info('EOLVimeo - Error duplicate video, edx_video_id: {} with course: {} already exists in edxval'.format(edx_val_id, new_course_key))
+    else:
+        logger.info('EOLVimeo - Error duplicate video, edx_video_id: {} with course: {} does not exist or already exists in course: {}'.format(edx_val_id, old_course_key, new_course_key))
+
+def duplicate_all_video(old_course_key, new_course_key, user=None):
+    """
+        Duplicate all video in another course
+    """
+    old_video_list = EolVimeoVideo.objects.filter(course_key=old_course_key)
+    old_video_ids = [x.edx_video_id for x in old_video_list]
+    new_video_list = EolVimeoVideo.objects.filter(edx_video_id__in=old_video_ids, course_key=new_course_key)
+    new_video_ids = [x.edx_video_id for x in new_video_list]
+    for video in old_video_list:
+        if video.edx_video_id not in new_video_ids:
+            EolVimeoVideo.objects.create(
+                edx_video_id = video.edx_video_id,
+                user = user if user else video.user,
+                vimeo_video_id = video.vimeo_video_id,
+                course_key = new_course_key,
+                url_vimeo = video.url_vimeo,
+                status = video.status,
+                error_description = video.error_description
+            )
+            logger.info('EolVimeo - Duplicate video {} from {} to {}'.format(video.edx_video_id, old_course_key, new_course_key))

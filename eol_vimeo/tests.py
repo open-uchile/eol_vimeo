@@ -26,7 +26,8 @@ from . import vimeo_utils, vimeo_task
 import time
 import pytz
 from datetime import datetime
-from edxval.api import create_video, create_profile
+from .models import EolVimeoVideo
+from edxval.api import create_video, create_profile, get_video_info
 
 class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
     def setUp(self):
@@ -35,7 +36,8 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
         self.maxDiff = None
         self.course = CourseFactory.create(
             org='mss', course='999', display_name='eol_test_course')
-
+        self.course2 = CourseFactory.create(
+            org='mss', course='222', display_name='eol_test_course2')
         self.video = {
             "edx_video_id": "123-456-789",
             "client_video_id": "test.mp4",
@@ -57,6 +59,18 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
         create_profile("desktop_mp4")
         create_video(self.video)
         create_video(self.video2)
+        with patch('common.djangoapps.student.models.cc.User.save'):
+            # staff user
+            self.user = UserFactory(
+                username='testuser2',
+                password='12345',
+                email='student2@edx.org',
+                is_staff=True)
+            self.user2 = UserFactory(
+                username='testuser3',
+                password='12345',
+                email='student3@edx.org',
+                is_staff=True)
 
     @patch('requests.put')
     @patch('requests.post')
@@ -449,3 +463,209 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
         response = vimeo_task.upload_vimeo(data)
         data2 = [{'edxVideoId': self.video['edx_video_id'], 'status':'upload_failed', 'message': 'No se pudo subir el video a Vimeo. ', 'vimeo_link':'', 'vimeo_id':''}]
         self.assertEqual(response, data2)
+
+    def test_duplicate_video_normal_process(self):
+        """
+            Test duplicate a specific video normal process
+        """
+        EolVimeoVideo.objects.create(
+            edx_video_id = self.video["edx_video_id"],
+            user =self.user,
+            vimeo_video_id = '1122334455',
+            course_key = self.course.id,
+            url_vimeo = 'url_video_vimeo',
+            status = 'upload_completed',
+            error_description = ''
+        )
+        self.assertEqual(len(EolVimeoVideo.objects.all()), 1)
+        video = get_video_info(self.video["edx_video_id"])
+        self.assertTrue({str(self.course2.id): None} not in video['courses'])
+        vimeo_utils.duplicate_video(self.video["edx_video_id"], self.course.id, self.course2.id, self.user2)
+        video = get_video_info(self.video["edx_video_id"])
+        self.assertTrue({str(self.course2.id): None} in video['courses'])
+        self.assertEqual(len(EolVimeoVideo.objects.all()), 2)
+        eolvimeo_model = EolVimeoVideo.objects.get(course_key=self.course2.id, edx_video_id=self.video["edx_video_id"])
+        self.assertEqual(eolvimeo_model.user, self.user2)
+
+    def test_duplicate_video_normal_process_without_user(self):
+        """
+            Test duplicate a specific video normal process without user
+        """
+        EolVimeoVideo.objects.create(
+            edx_video_id = self.video["edx_video_id"],
+            user =self.user,
+            vimeo_video_id = '1122334455',
+            course_key = self.course.id,
+            url_vimeo = 'url_video_vimeo',
+            status = 'upload_completed',
+            error_description = ''
+        )
+        self.assertEqual(len(EolVimeoVideo.objects.all()), 1)
+        video = get_video_info(self.video["edx_video_id"])
+        self.assertTrue({str(self.course2.id): None} not in video['courses'])
+        vimeo_utils.duplicate_video(self.video["edx_video_id"], self.course.id, self.course2.id)
+        video = get_video_info(self.video["edx_video_id"])
+        self.assertTrue({str(self.course2.id): None} in video['courses'])
+        self.assertEqual(len(EolVimeoVideo.objects.all()), 2)
+        eolvimeo_model = EolVimeoVideo.objects.get(course_key=self.course2.id, edx_video_id=self.video["edx_video_id"])
+        self.assertEqual(eolvimeo_model.user, self.user)
+
+    def test_duplicate_video_normal_process_no_model(self):
+        """
+            Test duplicate a specific video, video no exists in eolvimeo model
+        """
+        self.assertEqual(len(EolVimeoVideo.objects.all()), 0)
+        video = get_video_info(self.video["edx_video_id"])
+        self.assertTrue({str(self.course2.id): None} not in video['courses'])
+        vimeo_utils.duplicate_video(self.video["edx_video_id"], self.course.id, self.course2.id)
+        video = get_video_info(self.video["edx_video_id"])
+        self.assertFalse({str(self.course2.id): None} in video['courses'])
+        self.assertEqual(len(EolVimeoVideo.objects.all()), 0)
+
+    def test_duplicate_video_normal_process_already_exists(self):
+        """
+            Test duplicate a specific video video already exists in eolvimeo model
+        """
+        EolVimeoVideo.objects.create(
+            edx_video_id = self.video["edx_video_id"],
+            user =self.user,
+            vimeo_video_id = '1122334455',
+            course_key = self.course.id,
+            url_vimeo = 'url_video_vimeo',
+            status = 'upload_completed',
+            error_description = ''
+        )
+        EolVimeoVideo.objects.create(
+            edx_video_id = self.video["edx_video_id"],
+            user =self.user,
+            vimeo_video_id = '1122334455',
+            course_key = self.course2.id,
+            url_vimeo = 'url_video_vimeo',
+            status = 'upload_completed',
+            error_description = ''
+        )
+        self.assertEqual(len(EolVimeoVideo.objects.all()), 2)
+        video = get_video_info(self.video["edx_video_id"])
+        self.assertTrue({str(self.course2.id): None} not in video['courses'])
+        vimeo_utils.duplicate_video(self.video["edx_video_id"], self.course.id, self.course2.id)
+        video = get_video_info(self.video["edx_video_id"])
+        self.assertFalse({str(self.course2.id): None} in video['courses'])
+        self.assertEqual(len(EolVimeoVideo.objects.all()), 2)
+
+    @patch("eol_vimeo.vimeo_utils.update_video")
+    def test_duplicate_video_fail_update_edxval(self, mock_update_video):
+        """
+            Test duplicate a specific video, fail update video in edxval
+        """
+        mock_update_video.side_effect = Exception()
+        EolVimeoVideo.objects.create(
+            edx_video_id = self.video["edx_video_id"],
+            user =self.user,
+            vimeo_video_id = '1122334455',
+            course_key = self.course.id,
+            url_vimeo = 'url_video_vimeo',
+            status = 'upload_completed',
+            error_description = ''
+        )
+        self.assertEqual(len(EolVimeoVideo.objects.all()), 1)
+        video = get_video_info(self.video["edx_video_id"])
+        self.assertTrue({str(self.course2.id): None} not in video['courses'])
+        vimeo_utils.duplicate_video(self.video["edx_video_id"], self.course.id, self.course2.id)
+        self.assertFalse({str(self.course2.id): None} in video['courses'])
+        self.assertEqual(len(EolVimeoVideo.objects.all()), 2)
+        eolvimeo_model = EolVimeoVideo.objects.get(course_key=self.course2.id, edx_video_id=self.video["edx_video_id"])
+        self.assertEqual(eolvimeo_model.user, self.user)
+
+    def test_duplicate_all_video_normal_process(self):
+        """
+            Test duplicate all video vimeo normal process
+        """
+        EolVimeoVideo.objects.create(
+            edx_video_id = self.video["edx_video_id"],
+            user =self.user,
+            vimeo_video_id = '1122334455',
+            course_key = self.course.id,
+            url_vimeo = 'url_video_vimeo',
+            status = 'upload_completed',
+            error_description = ''
+        )
+        EolVimeoVideo.objects.create(
+            edx_video_id = self.video2["edx_video_id"],
+            user =self.user,
+            vimeo_video_id = '9922334455',
+            course_key = self.course.id,
+            url_vimeo = 'url_video_vimeo2',
+            status = 'upload_completed',
+            error_description = ''
+        )
+        self.assertEqual(len(EolVimeoVideo.objects.all()), 2)
+
+        vimeo_utils.duplicate_all_video(self.course.id, self.course2.id)
+        self.assertEqual(len(EolVimeoVideo.objects.all()), 4)
+        self.assertEqual(len(EolVimeoVideo.objects.filter(course_key=self.course2.id)), 2)
+
+    def test_duplicate_all_video_normal_process_with_user(self):
+        """
+            Test duplicate all video vimeo normal process
+        """
+        EolVimeoVideo.objects.create(
+            edx_video_id = self.video["edx_video_id"],
+            user =self.user,
+            vimeo_video_id = '1122334455',
+            course_key = self.course.id,
+            url_vimeo = 'url_video_vimeo',
+            status = 'upload_completed',
+            error_description = ''
+        )
+        self.assertEqual(len(EolVimeoVideo.objects.all()), 1)
+
+        vimeo_utils.duplicate_all_video(self.course.id, self.course2.id, self.user2)
+        self.assertEqual(len(EolVimeoVideo.objects.all()), 2)
+        eolvimeo_model = EolVimeoVideo.objects.get(course_key=self.course2.id, edx_video_id=self.video["edx_video_id"])
+        self.assertEqual(eolvimeo_model.user, self.user2)
+
+    def test_duplicate_all_video_exists_video(self):
+        """
+            Test duplicate all video vimeo, when videos already exists in eolvimeo model
+        """
+        EolVimeoVideo.objects.create(
+            edx_video_id = self.video["edx_video_id"],
+            user =self.user,
+            vimeo_video_id = '1122334455',
+            course_key = self.course.id,
+            url_vimeo = 'url_video_vimeo',
+            status = 'upload_completed',
+            error_description = ''
+        )
+        EolVimeoVideo.objects.create(
+            edx_video_id = self.video2["edx_video_id"],
+            user =self.user,
+            vimeo_video_id = '9922334455',
+            course_key = self.course.id,
+            url_vimeo = 'url_video_vimeo2',
+            status = 'upload_completed',
+            error_description = ''
+        )
+        EolVimeoVideo.objects.create(
+            edx_video_id = self.video["edx_video_id"],
+            user =self.user,
+            vimeo_video_id = '1122334455',
+            course_key = self.course2.id,
+            url_vimeo = 'url_video_vimeo',
+            status = 'upload_completed',
+            error_description = ''
+        )
+        EolVimeoVideo.objects.create(
+            edx_video_id = self.video2["edx_video_id"],
+            user =self.user,
+            vimeo_video_id = '9922334455',
+            course_key = self.course2.id,
+            url_vimeo = 'url_video_vimeo2',
+            status = 'upload_completed',
+            error_description = ''
+        )
+        self.assertEqual(len(EolVimeoVideo.objects.all()), 4)
+
+        vimeo_utils.duplicate_all_video(self.course.id, self.course2.id)
+        self.assertEqual(len(EolVimeoVideo.objects.all()), 4)
+        self.assertEqual(len(EolVimeoVideo.objects.filter(course_key=self.course2.id)), 2)

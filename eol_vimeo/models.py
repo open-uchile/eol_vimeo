@@ -9,14 +9,13 @@ URL_REGEX = '^[a-zA-Z0-9\\-_]*$'
 class EolVimeoVideo(models.Model):
     class Meta:
         index_together = [
-            ["edx_video_id", "user"],
+            ["edx_video_id", "course_key"],
         ]
         unique_together = [
-            ["edx_video_id", "user"],
+            ["edx_video_id", "course_key"],
         ]
     edx_video_id = models.CharField(
         max_length=100,
-        unique=True,
         validators=[
             RegexValidator(
                 regex=URL_REGEX,
