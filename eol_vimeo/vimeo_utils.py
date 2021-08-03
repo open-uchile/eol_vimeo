@@ -7,6 +7,7 @@ import json
 import os
 import math
 from django.conf import settings
+from openedx.core.djangoapps.site_configuration import helpers as configuration_helpers
 from opaque_keys.edx.keys import CourseKey, UsageKey
 from opaque_keys import InvalidKeyError
 from django.contrib.auth.models import User
@@ -171,7 +172,7 @@ def create_folder(client):
         Create folder in vimeo.
         return folder uri
     """
-    name_folder = settings.EOL_VIMEO_MAIN_FOLDER or "Studio Eol"
+    name_folder = configuration_helpers.get_value('EOL_VIMEO_MAIN_FOLDER', settings.EOL_VIMEO_MAIN_FOLDER)
     try:
         response_folder = client.post('/me/projects', data={"name": name_folder})
         if response_folder.status_code == 201:
@@ -189,7 +190,7 @@ def get_folders(page, client):
         Get the folders based on the given page.
         100 folders by page
     """
-    name_folder = settings.EOL_VIMEO_MAIN_FOLDER or "Studio Eol"
+    name_folder = configuration_helpers.get_value('EOL_VIMEO_MAIN_FOLDER', settings.EOL_VIMEO_MAIN_FOLDER)
     uri_folder = ''
     next_step = False
     try:
