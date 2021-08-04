@@ -131,7 +131,7 @@ def get_video_vimeo(id_video):
         logger.exception('EolVimeo - Exception: %s' % str(e))
         return {}
 
-def move_to_folder(id_video):
+def move_to_folder(id_video, name_folder):
     """
         Check if main folder exists in vimeo to move the video there, if not exists, create the folder
         Only check first 100 folders in ascending order
@@ -141,12 +141,12 @@ def move_to_folder(id_video):
         return False
     next_response = True
     uri_folder = ''
-    uri_folder, next_response = get_folders(1, client)
+    uri_folder, next_response = get_folders(1, client, name_folder)
     if uri_folder == 'Error':
         return False
     if uri_folder == '':
         logger.info('EolVimeo - Vimeo folder not found')
-        uri_folder = create_folder(client)
+        uri_folder = create_folder(client, name_folder)
         if uri_folder == 'Error':
             return False
     id_folder = uri_folder.split('/')[-1]
@@ -167,12 +167,11 @@ def move_video(client, id_folder, id_video):
         logger.exception('EolVimeo - Exception: %s' % str(e))
         return False
 
-def create_folder(client):
+def create_folder(client, name_folder):
     """
         Create folder in vimeo.
         return folder uri
     """
-    name_folder = configuration_helpers.get_value('EOL_VIMEO_MAIN_FOLDER', settings.EOL_VIMEO_MAIN_FOLDER)
     try:
         response_folder = client.post('/me/projects', data={"name": name_folder})
         if response_folder.status_code == 201:
@@ -185,12 +184,11 @@ def create_folder(client):
         logger.exception('EolVimeo - Exception: %s' % str(e))
         return 'Error'
 
-def get_folders(page, client):
+def get_folders(page, client, name_folder):
     """
         Get the folders based on the given page.
         100 folders by page
     """
-    name_folder = configuration_helpers.get_value('EOL_VIMEO_MAIN_FOLDER', settings.EOL_VIMEO_MAIN_FOLDER)
     uri_folder = ''
     next_step = False
     try:
@@ -282,7 +280,7 @@ def update_create_vimeo_model(edxVideoId, user_id, status, message, course_key_s
         data['course_key'] = course_key
     except InvalidKeyError:
         logger.info('EolVimeo - Invalid CourseKey course_key: {}.'.format(course_key_string))
-    logger.info('EolVimeo - User: {}.'.format(user_id))
+    logger.info('EolVimeo - Update or Create vimeo model, edxVideoId {}, course: {}, User: {}.'.format(edxVideoId, course_key_string, user_id))
     EolVimeoVideo.objects.update_or_create(
             user_id=user_id,
             edx_video_id=edxVideoId,

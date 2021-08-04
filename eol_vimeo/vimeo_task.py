@@ -35,7 +35,7 @@ from edxval.api import update_video_status
 from django.core.files.storage import get_storage_class
 logger = logging.getLogger(__name__)
 
-def upload_vimeo(data):
+def upload_vimeo(data, name_folder):
     """
         Upload video from edxval to vimeo.
         only upload video with status 'upload_completed'
@@ -53,7 +53,7 @@ def upload_vimeo(data):
                 if is_added is False:
                     video_info['message'] = video_info['message'] + 'No se pudo agregar los dominios al video en Vimeo. '
                     logger.info('{} was dont have domain'.format(uri_video))
-                is_moved = move_to_folder(uri_video.split('/')[-1])
+                is_moved = move_to_folder(uri_video.split('/')[-1], name_folder)
                 if is_moved is False:
                     video_info['message'] = video_info['message'] + 'No se pudo mover el video a la carpeta principal en Vimeo. '
                     logger.info('{} was not moved'.format(uri_video))
@@ -102,17 +102,17 @@ def task_get_data(
     start_time = time()
     task_progress = TaskProgress(action_name, 1, start_time)
 
-    response = upload_vimeo(task_input['data'])
+    response = upload_vimeo(task_input['data'], task_input['name_folder'])
     for video in response:
         update_create_vimeo_model(video['edxVideoId'], user_id, video['status'], video['message'], str(course_id), url=video['vimeo_link'], vimeo_id=video['vimeo_id'])
     current_step = {'step': 'Uploading Video to Vimeo'}
     return task_progress.update_task_state(extra_meta=current_step)
 
-def task_process_data(request, course_id, data):
+def task_process_data(request, course_id, data, name_folder):
     course_key = CourseKey.from_string(course_id)
     task_type = 'EOL_VIMEO'
     task_class = process_data
-    task_input = {'course_id': course_id, 'data': data, 'user':request.user.id}
+    task_input = {'course_id': course_id, 'data': data, 'user':request.user.id, 'name_folder': name_folder}
     if len(data) > 0:
         task_key = "{}_{}_{}".format(course_id, request.user.id, data[0]['edxVideoId'])
     else:
