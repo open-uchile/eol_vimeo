@@ -22,10 +22,15 @@ import logging
 import vimeo
 import tempfile
 import shutil
+import json
+import urllib.parse
+import requests
 from edxval.models import Video
 from edxval.api import update_video, _get_video, get_video_info
 from django.core.files.storage import get_storage_class
 from .models import EolVimeoVideo
+from cms.djangoapps.contentstore.views import videos
+
 logger = logging.getLogger(__name__)
 
 def get_storage():
@@ -57,14 +62,12 @@ def copy_file(id_file):
         return video uri
     """
     try:
-        with tempfile.TemporaryDirectory() as tmp:
-            with open(os.path.join(tmp, 'video'), 'wb') as local:
-                path_video = os.path.join(tmp, 'video')
-                video = get_storage().open(id_file)
-                shutil.copyfileobj(video, local)
-            status = upload(path_video, id_file)
-            get_storage().delete(id_file)
-            return status
+        bucket = videos.storage_service_bucket()
+        key = videos.storage_service_key(bucket, file_name=id_file)
+        upload_url = key.generate_url(86400, 'GET')
+        status = upload(upload_url, id_file)
+        #get_storage().delete(id_file)
+        return status
     except Exception:
         #IOError, ClientError
         logger.info('EolVimeo - The id_file does not exists, id_file: {}'.format(id_file))
@@ -208,27 +211,45 @@ def get_folders(page, client, name_folder):
         logger.exception('EolVimeo - Exception: %s' % str(e))
         return 'Error', next_step
 
-def upload(file_name, id_file):
+def upload(upload_url, id_file):
     """
         Upload the video file to Vimeo
     """
-    client = get_client_vimeo()
-    if client is None:
+    if not check_credentials():
+        logger.info('EolVimeo - Credentials are not defined')
         return 'Error'
     try:
         video = _get_video(id_file)
-        uri = client.upload(file_name, data={
+        headers = {
+            "Authorization": "Bearer {}".format(settings.EOL_VIMEO_CLIENT_TOKEN),
+            "Content-Type": "application/json",
+            "Accept": 'application/vnd.vimeo.*+json;version=3.4'
+        }
+
+        url = "https://api.vimeo.com/me/videos"
+        body = {
+            "upload": {
+                "approach": "pull",
+                "link": urllib.parse.quote(upload_url, safe='/')
+            },
             'name': video.client_video_id,
             'description': "",
             'privacy': {
                 'embed': "whitelist",
                 'view': 'disable'
                 }
-        })
-        logger.info('EolVimeo - "{}" has been uploaded to {}'.format(file_name, uri))
-        return uri
+            }
+        r = requests.post(url, data=json.dumps(body), headers=headers)
+        if r.status_code == 201:
+            data = json.loads(result.text)
+            uri = data['uri']
+            logger.info('EolVimeo - "{}" is uploading to {}'.format(id_file, uri))
+            return uri
+        else:
+            logger.info('EolVimeo - "{}" fail upload to vimeo, status_code: {}, error: {}'.format(id_file, r.status_code, r.text))
+            return 'Error'
     except (Exception, vimeo.exceptions.VideoUploadFailure) as e:
-        logger.exception('EolVimeo - Error uploading: {}, Exception'.format(file_name, str(e)))
+        logger.exception('EolVimeo - Error uploading: {}, Exception'.format(id_file, str(e)))
         return 'Error'
 
 def get_link_video(video_data):
