@@ -124,7 +124,7 @@ def get_video_vimeo(id_video):
     if client is None:
         return {}
     try:
-        response = client.get('/videos/{}'.format(id_video), params={"fields": "name,duration,files"})
+        response = client.get('/videos/{}'.format(id_video), params={"fields": "name,duration,files,upload"})
         if response.status_code == 200:
             return response.json()
         else:
@@ -230,7 +230,7 @@ def upload(upload_url, id_file):
         body = {
             "upload": {
                 "approach": "pull",
-                "link": urllib.parse.quote(upload_url, safe='/')
+                "link": urllib.parse.quote(upload_url, safe='~@#$&()*!+=:;,.?/\'')
             },
             'name': video.client_video_id,
             'description': "",

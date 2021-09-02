@@ -27,6 +27,10 @@ class Command(BaseCommand):
                     video.error_description = 'No se pudo obtener el video en Vimeo.'
                     video.status = 'vimeo_not_found'
                     video.save()
+                elif 'upload' not in video_data or video_data['upload']['status'] == 'error':
+                    logger.info('EolVimeoCommand - video was not uploaded correctly, edx_video_id: {}, id_vimeo: {}'.format(video.edx_video_id, video.vimeo_video_id))
+                    video.error_description = 'Token Usuario Vimeo tiene plan Basic.'
+                    video.save()
                 elif 'files' not in video_data or len(video_data['files']) == 0:
                     logger.info('EolVimeoCommand - Token User Vimeo have Basic plan, edx_video_id: {}'.format(video.edx_video_id))
                     video.error_description = 'Token Usuario Vimeo tiene plan Basic.'

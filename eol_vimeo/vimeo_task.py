@@ -59,7 +59,10 @@ def upload_vimeo(data, name_folder):
                     logger.info('{} was not moved'.format(uri_video))
                 video_data = get_video_vimeo(uri_video.split('/')[-1])
                 video_info['vimeo_id'] = uri_video.split('/')[-1]
-                if len(video_data) == 0 or 'files' not in video_data or len(video_data['files']) == 0:
+                if len(video_data) == 0 or 'upload' not in video_data or video_data['upload']['status'] == 'error':
+                    video_info['status'] = 'upload_failed'
+                    video_info['message'] = video_info['message'] + 'Video no se subio correctamente a Vimeo. '
+                elif len(video_data) == 0 or 'files' not in video_data or len(video_data['files']) == 0:
                     video_info['status'] = 'upload_failed'
                     video_info['message'] = video_info['message'] + 'No se pudo obtener el video en Vimeo. '
                 else:
