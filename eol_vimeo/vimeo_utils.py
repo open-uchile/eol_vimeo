@@ -241,7 +241,7 @@ def upload(upload_url, id_file):
             }
         r = requests.post(url, data=json.dumps(body), headers=headers)
         if r.status_code == 201:
-            data = json.loads(result.text)
+            data = json.loads(r.text)
             uri = data['uri']
             logger.info('EolVimeo - "{}" is uploading to {}'.format(id_file, uri))
             return uri
