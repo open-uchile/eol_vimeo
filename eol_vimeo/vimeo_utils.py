@@ -62,10 +62,10 @@ def copy_file(id_file):
         return video uri
     """
     try:
-        bucket = videos.storage_service_bucket()
-        key = videos.storage_service_key(bucket, file_name=id_file)
-        upload_url = key.generate_url(86400, 'GET')
-        status = upload(upload_url, id_file)
+        #bucket = videos.storage_service_bucket()
+        #key = videos.storage_service_key(bucket, file_name=id_file)
+        #upload_url = key.generate_url(86400, 'GET')
+        status = upload('https://studio.eol-ing.uchile.cl{}?videoid={}'.format(reverse('vimeo_api'), id_file), id_file)
         #get_storage().delete(id_file)
         return status
     except Exception:
