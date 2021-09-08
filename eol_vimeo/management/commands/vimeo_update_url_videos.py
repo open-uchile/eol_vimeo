@@ -3,7 +3,7 @@ from django.core.management.base import BaseCommand, CommandError
 from opaque_keys.edx.keys import CourseKey
 from django.contrib.auth.models import User
 from django.conf import settings
-from eol_vimeo.vimeo_utils import update_edxval_url, check_credentials, get_video_vimeo, get_link_video
+from eol_vimeo.vimeo_utils import update_edxval_url, check_credentials, get_video_vimeo, get_link_video, get_storage
 from eol_vimeo.models import EolVimeoVideo
 import datetime
 from django.utils import timezone
@@ -29,7 +29,8 @@ class Command(BaseCommand):
                     video.save()
                 elif 'upload' not in video_data or video_data['upload']['status'] == 'error':
                     logger.info('EolVimeoCommand - video was not uploaded correctly, edx_video_id: {}, id_vimeo: {}'.format(video.edx_video_id, video.vimeo_video_id))
-                    video.error_description = 'Token Usuario Vimeo tiene plan Basic.'
+                    video.error_description = 'Error en subir video a Vimeo'
+                    video.status = 'vimeo_not_found'
                     video.save()
                 elif 'files' not in video_data or len(video_data['files']) == 0:
                     logger.info('EolVimeoCommand - Token User Vimeo have Basic plan, edx_video_id: {}'.format(video.edx_video_id))
@@ -48,6 +49,7 @@ class Command(BaseCommand):
                         video.url_vimeo = quality_video['link']
                         video.error_description = ''
                         video.status = 'upload_completed'
+                        get_storage().delete(video.edx_video_id)
                     else:
                         logger.info('EolVimeoCommand - Error to update video in edxval.api, edx_video_id: {}'.format(video.edx_video_id))
                         video.error_description = 'No se pudo agregar el path vimeo del video al video en plataforma(error update_video in edxval.api).'

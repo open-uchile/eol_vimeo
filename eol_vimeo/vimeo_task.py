@@ -13,7 +13,7 @@ from opaque_keys import InvalidKeyError
 from django.contrib.auth.models import User
 from opaque_keys.edx.locator import CourseLocator, BlockUsageLocator
 from .vimeo_utils import (
-    copy_file,
+    upload,
     add_domain_to_video,
     move_to_folder,
     get_video_vimeo,
@@ -35,7 +35,7 @@ from edxval.api import update_video_status
 from django.core.files.storage import get_storage_class
 logger = logging.getLogger(__name__)
 
-def upload_vimeo(data, name_folder):
+def upload_vimeo(data, name_folder, domain):
     """
         Upload video from edxval to vimeo.
         only upload video with status 'upload_completed'
@@ -44,7 +44,7 @@ def upload_vimeo(data, name_folder):
     for video in data:
         video_info = {'edxVideoId': video.get('edxVideoId'), 'status':'', 'message': '', 'vimeo_link':'', 'vimeo_id':''}
         if video.get('status') == 'upload_completed':
-            uri_video = copy_file(video.get('edxVideoId'))
+            uri_video = upload(video.get('edxVideoId'), domain)
             if uri_video == 'Error':
                 video_info['status'] = 'upload_failed'
                 video_info['message'] = 'No se pudo subir el video a Vimeo. '
@@ -69,9 +69,15 @@ def upload_vimeo(data, name_folder):
                     quality_video = get_link_video(video_data)
                     video_name = '{} {}'.format(video_data['name'], quality_video['public_name'])
                     video_info['vimeo_link'] = quality_video['link']
-                    is_updated = update_edxval_url(video.get('edxVideoId'), quality_video['link'], quality_video['size'], video_name, video_data['duration'], 'vimeo_encoding')
+                    if video_data['upload']['status'] == 'complete':
+                        status_video = 'upload_completed'
+                    elif video_data['upload']['status'] == 'error':
+                        status_video = 'upload_failed'
+                    else:
+                        status_video = 'vimeo_encoding'
+                    is_updated = update_edxval_url(video.get('edxVideoId'), quality_video['link'], quality_video['size'], video_name, video_data['duration'], status_video)
                     if is_updated:
-                        video_info['status'] = 'vimeo_encoding'
+                        video_info['status'] = status_video
                     else:
                         video_info['status'] = 'upload_failed'
                         video_info['message'] = video_info['message'] + 'No se pudo agregar el path vimeo del video al video en plataforma(error update_video in edxval.api). '
@@ -105,17 +111,17 @@ def task_get_data(
     start_time = time()
     task_progress = TaskProgress(action_name, 1, start_time)
 
-    response = upload_vimeo(task_input['data'], task_input['name_folder'])
+    response = upload_vimeo(task_input['data'], task_input['name_folder'], task_input['domain'])
     for video in response:
         update_create_vimeo_model(video['edxVideoId'], user_id, video['status'], video['message'], str(course_id), url=video['vimeo_link'], vimeo_id=video['vimeo_id'])
     current_step = {'step': 'Uploading Video to Vimeo'}
     return task_progress.update_task_state(extra_meta=current_step)
 
-def task_process_data(request, course_id, data, name_folder):
+def task_process_data(request, course_id, data, name_folder, domain):
     course_key = CourseKey.from_string(course_id)
     task_type = 'EOL_VIMEO'
     task_class = process_data
-    task_input = {'course_id': course_id, 'data': data, 'user':request.user.id, 'name_folder': name_folder}
+    task_input = {'course_id': course_id, 'data': data, 'user':request.user.id, 'name_folder': name_folder, 'domain': domain}
     if len(data) > 0:
         task_key = "{}_{}_{}".format(course_id, request.user.id, data[0]['edxVideoId'])
     else:

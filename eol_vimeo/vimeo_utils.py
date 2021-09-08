@@ -56,23 +56,6 @@ def get_client_vimeo():
     )
     return client
 
-def copy_file(id_file):
-    """
-        Copy the video file to a temporary directory to get the video path and upload it to vimeo
-        return video uri
-    """
-    try:
-        #bucket = videos.storage_service_bucket()
-        #key = videos.storage_service_key(bucket, file_name=id_file)
-        #upload_url = key.generate_url(86400, 'GET')
-        status = upload('https://studio.eol-ing.uchile.cl{}?videoid={}'.format(reverse('vimeo_api'), id_file), id_file)
-        #get_storage().delete(id_file)
-        return status
-    except Exception:
-        #IOError, ClientError
-        logger.info('EolVimeo - The id_file does not exists, id_file: {}'.format(id_file))
-        return 'Error'
-
 def update_edxval_url(edx_video_id, video_url, file_size, file_name, duration, status):
     """
         Update video in edxval model with vimeo url
@@ -211,10 +194,11 @@ def get_folders(page, client, name_folder):
         logger.exception('EolVimeo - Exception: %s' % str(e))
         return 'Error', next_step
 
-def upload(upload_url, id_file):
+def upload(id_file, domain):
     """
         Upload the video file to Vimeo
     """
+    upload_url = '{}{}?videoid={}'.format(domain, reverse('vimeo_callback'), id_file)
     if not check_credentials():
         logger.info('EolVimeo - Credentials are not defined')
         return 'Error'
@@ -242,9 +226,13 @@ def upload(upload_url, id_file):
         r = requests.post(url, data=json.dumps(body), headers=headers)
         if r.status_code == 201:
             data = json.loads(r.text)
-            uri = data['uri']
-            logger.info('EolVimeo - "{}" is uploading to {}'.format(id_file, uri))
-            return uri
+            if data['upload']['status'] == 'in_progress':
+                uri = data['uri']
+                logger.info('EolVimeo - "{}" is uploading to {}'.format(id_file, uri))
+                return uri
+            else:
+                logger.info('EolVimeo - "{}" fail upload to vimeo, status_code: {}, error: {}'.format(id_file, r.status_code, json.dumps(data['upload'])))
+                return 'Error'
         else:
             logger.info('EolVimeo - "{}" fail upload to vimeo, status_code: {}, error: {}'.format(id_file, r.status_code, r.text))
             return 'Error'
