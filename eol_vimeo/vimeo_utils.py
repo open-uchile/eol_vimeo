@@ -30,6 +30,7 @@ from edxval.api import update_video, _get_video, get_video_info
 from django.core.files.storage import get_storage_class
 from .models import EolVimeoVideo
 from cms.djangoapps.contentstore.views import videos
+from edxval.api import update_video_status
 
 logger = logging.getLogger(__name__)
 
@@ -344,3 +345,57 @@ def duplicate_all_video(old_course_key, new_course_key, user=None):
                 error_description = video.error_description
             )
             logger.info('EolVimeo - Duplicate video {} from {} to {}'.format(video.edx_video_id, old_course_key, new_course_key))
+
+def update_video_vimeo(course_id=None):
+    """
+        Update link and status of video with status ['vimeo_encoding', 'vimeo_upload']
+    """
+    if check_credentials():
+        if course_id is None:
+            videos = EolVimeoVideo.objects.filter(status__in=['vimeo_encoding', 'vimeo_upload'])
+        else:
+            course_key = CourseKey.from_string(course_id)
+            videos = EolVimeoVideo.objects.filter(course_key=course_key, status__in=['vimeo_encoding', 'vimeo_upload'])
+        for video in videos:
+            video_data = get_video_vimeo(video.vimeo_video_id)
+            if len(video_data) == 0:
+                logger.info('EolVimeo - Video not found in vimeo, edx_video_id: {}'.format(video.edx_video_id))
+                video.error_description = 'No se pudo obtener el video en Vimeo.'
+                video.status = 'vimeo_not_found'
+                video.save()
+                update_video_status(video.edx_video_id, 'vimeo_not_found')
+            elif 'upload' not in video_data or video_data['upload']['status'] == 'error':
+                logger.info('EolVimeo - video was not uploaded correctly, edx_video_id: {}, id_vimeo: {}'.format(video.edx_video_id, video.vimeo_video_id))
+                video.status = 'upload_failed'
+                video.error_description = 'Video no se subio correctamente a Vimeo. '
+                video.save()
+                update_video_status(video.edx_video_id, 'upload_failed')
+            elif 'files' not in video_data or len(video_data['files']) == 0:
+                video.error_description = 'No se pudo obtener los links del video en Vimeo. '
+                video.save()
+            else:
+                quality_video = get_link_video(video_data)
+                video_name = '{} {}'.format(video_data['name'], quality_video['public_name'])
+                if quality_video['public_name'] == 'Original':
+                    logger.info('EolVimeo - Video is still processing, edx_video_id: {}'.format(video.edx_video_id))
+                    error_description = 'Vimeo todavia esta procesando el video.'
+                    status_video = 'vimeo_encoding'
+                else:
+                    status_video = 'upload_completed'
+                    error_description = 'upload_completed'
+                video.url_vimeo = quality_video['link']
+                video.status = status_video
+                video.error_description = error_description
+                video.save()
+                is_updated = update_edxval_url(video.edx_video_id, quality_video['link'], quality_video['size'], video_name, video_data['duration'], status_video)
+                if is_updated:
+                    logger.info('EolVimeo - Video upload completed, edx_video_id: {}'.format(video.edx_video_id))
+                    get_storage().delete(video.edx_video_id)
+                else:
+                    logger.info('EolVimeo - error update_video in edxval.api, edx_video_id: {}'.format(video.edx_video_id))
+                    video.error_description = 'No se pudo agregar el path vimeo del video al video en plataforma(error update_video in edxval.api). '
+                    video.status = 'vimeo_patch_failed'
+                    video.save()
+                    update_video_status(video.edx_video_id, 'vimeo_patch_failed')
+    else:
+        logger.info('EolVimeo - Credentials are not defined')

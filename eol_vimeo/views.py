@@ -32,13 +32,10 @@ def vimeo_callback(request):
         return HttpResponse(status=400)
 
     try:
-        logger.info("EolVimeo - Request origin: {}".format(request.headers['Origin']))
+        logger.info(request.__dict__)
     except Exception:
-        logger.info("EolVimeo - Error Request origin")
-    try:
-        logger.info("EolVimeo - Request meta: {}".format(request.META['HTTP_REFERER']))
-    except Exception:
-        logger.info("EolVimeo - Error Request meta")
+        logger.info("EolVimeo - Error Request")
+
     edx_video_id = request.GET.get('videoid', '')
     if not EolVimeoVideo.objects.filter(edx_video_id=edx_video_id, status__in=['vimeo_encoding', 'upload']).exists():
         logger.error("EolVimeo - Video id have problem check model edx_video_id: {}".format(edx_video_id))
