@@ -26,7 +26,8 @@ import json
 from . import vimeo_utils, vimeo_task
 import time
 import pytz
-from datetime import datetime
+import datetime
+import urllib.parse
 from .models import EolVimeoVideo
 from edxval.api import create_video, create_profile, get_video_info
 
@@ -45,7 +46,7 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
             "duration": 10,
             "status": 'vimeo_upload',
             "courses":  [text_type(self.course.id)],
-            "created": datetime.now(pytz.utc),
+            "created": datetime.datetime.now(pytz.utc),
             "encoded_videos": [],
         }
         self.video2 = {
@@ -54,7 +55,7 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
             "duration": 10,
             "status": 'vimeo_upload',
             "courses":  [text_type(self.course.id)],
-            "created": datetime.now(pytz.utc),
+            "created": datetime.datetime.now(pytz.utc),
             "encoded_videos": [],
         }
         create_profile("desktop_mp4")
@@ -85,6 +86,15 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
         """
             Test upload video to vimeo normal process
         """
+        EolVimeoVideo.objects.create(
+            edx_video_id = self.video["edx_video_id"],
+            user =self.user,
+            vimeo_video_id = '1122334455',
+            course_key = self.course.id,
+            url_vimeo = '',
+            status = 'vimeo_encoding',
+            error_description = ''
+        )
         get_storage.configure_mock(open=Mock(), delete=Mock())
         get_data = {'page': 1, 'total': 1, 'data': [{'uri':'/users/112233/projects/12345','name':'test'}]}
         get_data2 = {'name':self.video['client_video_id'], 'duration':self.video['duration'], 'upload': {'status': 'in_progress'}, 'files': [{'quality': 'source', 'type': 'source', 'width': 0, 'height': 0, 'link': 'https://player.vimeo.com/external/1122233344', 'created_time': '2021-06-08T14:21:04+00:00', 'fps': 30, 'size': 0, 'md5': None, 'public_name': 'Original', 'size_short': ''}]}
@@ -96,7 +106,7 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
         post.side_effect = [namedtuple("Request", ["status_code", "text"])(201, json.dumps(post_data)), namedtuple("Request", ["status_code", "json"])(201, lambda:post_data2),]
 
         data = [{'edxVideoId': self.video['edx_video_id'], 'status':'upload_completed', 'message': ''}]
-        response = vimeo_task.upload_vimeo(data, settings.EOL_VIMEO_MAIN_FOLDER, 'https://test.test.ts')
+        response = vimeo_task.upload_vimeo(data, settings.EOL_VIMEO_MAIN_FOLDER, 'https://test.test.ts', self.course.id)
         data2 = [{'edxVideoId': self.video['edx_video_id'], 'status':'vimeo_upload', 'message': '', 'vimeo_id':'123456789'}]
         self.assertEqual(response, data2)
 
@@ -112,6 +122,24 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
         """
             Test upload video to vimeo normal process with multiple videos
         """
+        EolVimeoVideo.objects.create(
+            edx_video_id = self.video["edx_video_id"],
+            user =self.user,
+            vimeo_video_id = '1122334455',
+            course_key = self.course.id,
+            url_vimeo = '',
+            status = 'vimeo_encoding',
+            error_description = ''
+        )
+        EolVimeoVideo.objects.create(
+            edx_video_id = self.video2["edx_video_id"],
+            user =self.user,
+            vimeo_video_id = '1122334455',
+            course_key = self.course.id,
+            url_vimeo = '',
+            status = 'vimeo_encoding',
+            error_description = ''
+        )
         get_storage.configure_mock(open=Mock(), delete=Mock())
         
         get_data = {'page': 1, 'total': 1, 'data': [{'uri':'/users/112233/projects/12345','name':'Studio Eol'}]}
@@ -128,7 +156,7 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
                 {'edxVideoId': self.video2['edx_video_id'], 'status':'upload_completed', 'message': ''},
                 {'edxVideoId': '456', 'status':'upload_failed', 'message': ''},
                 {'edxVideoId': '789', 'status':'upload_cancelled', 'message': ''}]
-        response = vimeo_task.upload_vimeo(data, settings.EOL_VIMEO_MAIN_FOLDER, 'https://test.test.ts')
+        response = vimeo_task.upload_vimeo(data, settings.EOL_VIMEO_MAIN_FOLDER, 'https://test.test.ts', self.course.id)
         data2 = [{'edxVideoId': self.video['edx_video_id'], 'status':'vimeo_upload', 'message': '', 'vimeo_id':'123456789'},
                 {'edxVideoId': '123', 'status':'upload', 'message': ''},
                 {'edxVideoId': self.video2['edx_video_id'], 'status':'vimeo_upload', 'message': '', 'vimeo_id':'123456789'},
@@ -148,6 +176,15 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
         """
             Test upload video to vimeo normal process when folders in vimeo exists
         """
+        EolVimeoVideo.objects.create(
+            edx_video_id = self.video["edx_video_id"],
+            user =self.user,
+            vimeo_video_id = '1122334455',
+            course_key = self.course.id,
+            url_vimeo = '',
+            status = 'vimeo_encoding',
+            error_description = ''
+        )
         get_storage.configure_mock(open=Mock(), delete=Mock())
         get_data = {'page': 1, 'total': 1, 'data': [{'uri':'/users/112233/projects/12345','name':'Studio Eol'}]}
         get_data2 = {'name':self.video['client_video_id'], 'duration':self.video['duration'], 'upload': {'status': 'in_progress'}, 'files': [{'quality': 'source', 'type': 'source', 'width': 0, 'height': 0, 'link': 'https://player.vimeo.com/external/1122233344', 'created_time': '2021-06-08T14:21:04+00:00', 'fps': 30, 'size': 0, 'md5': None, 'public_name': 'Original', 'size_short': ''}]}
@@ -157,7 +194,7 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
         post.side_effect = [namedtuple("Request", ["status_code", "text"])(201, json.dumps(post_data)),]
 
         data = [{'edxVideoId': self.video['edx_video_id'], 'status':'upload_completed', 'message': ''}]
-        response = vimeo_task.upload_vimeo(data, settings.EOL_VIMEO_MAIN_FOLDER, 'https://test.test.ts')
+        response = vimeo_task.upload_vimeo(data, settings.EOL_VIMEO_MAIN_FOLDER, 'https://test.test.ts', self.course.id)
         data2 = [{'edxVideoId': self.video['edx_video_id'], 'status':'vimeo_upload', 'message': '', 'vimeo_id':'123456789'}]
         self.assertEqual(response, data2)
 
@@ -173,6 +210,15 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
         """
             Test upload video to vimeo when fail to get video in vimeo
         """
+        EolVimeoVideo.objects.create(
+            edx_video_id = self.video["edx_video_id"],
+            user =self.user,
+            vimeo_video_id = '1122334455',
+            course_key = self.course.id,
+            url_vimeo = '',
+            status = 'vimeo_encoding',
+            error_description = ''
+        )
         get_storage.configure_mock(open=Mock(), delete=Mock())
         get_data = {'page': 1, 'total': 1, 'data': [{'uri':'/users/112233/projects/12345','name':'test'}]}
         get_data2 = {'error': "The requested video couldn't be found."}
@@ -184,7 +230,7 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
         post.side_effect = [namedtuple("Request", ["status_code", "text"])(201, json.dumps(post_data)), namedtuple("Request", ["status_code", "json"])(201, lambda:post_data2),]
 
         data = [{'edxVideoId': self.video['edx_video_id'], 'status':'upload_completed', 'message': ''}]
-        response = vimeo_task.upload_vimeo(data, settings.EOL_VIMEO_MAIN_FOLDER, 'https://test.test.ts')
+        response = vimeo_task.upload_vimeo(data, settings.EOL_VIMEO_MAIN_FOLDER, 'https://test.test.ts', self.course.id)
         data2 = [{'edxVideoId': self.video['edx_video_id'], 'status':'upload_failed', 'message': 'Video no se subio correctamente a Vimeo. ', 'vimeo_id':'123456789'}]
         self.assertEqual(response, data2)
 
@@ -200,6 +246,15 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
         """
             Test upload video to vimeo when fail get folders in vimeo
         """
+        EolVimeoVideo.objects.create(
+            edx_video_id = self.video["edx_video_id"],
+            user =self.user,
+            vimeo_video_id = '1122334455',
+            course_key = self.course.id,
+            url_vimeo = '',
+            status = 'vimeo_encoding',
+            error_description = ''
+        )
         get_storage.configure_mock(open=Mock(), delete=Mock())
         get_data = {'error': 'Something strange occurred. Please contact the app owners.', 'link': None, 'developer_message': 'The credentials provided are invalid.', 'error_code': 8000}
         get_data2 = {'name':self.video['client_video_id'], 'duration':self.video['duration'], 'upload': {'status': 'in_progress'}, 'files': [{'quality': 'source', 'type': 'source', 'width': 0, 'height': 0, 'link': 'https://player.vimeo.com/external/1122233344', 'created_time': '2021-06-08T14:21:04+00:00', 'fps': 30, 'size': 0, 'md5': None, 'public_name': 'Original', 'size_short': ''}]}
@@ -210,7 +265,7 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
         post.side_effect = [namedtuple("Request", ["status_code", "text"])(201, json.dumps(post_data)), ]
 
         data = [{'edxVideoId': self.video['edx_video_id'], 'status':'upload_completed', 'message': ''}]
-        response = vimeo_task.upload_vimeo(data, settings.EOL_VIMEO_MAIN_FOLDER, 'https://test.test.ts')
+        response = vimeo_task.upload_vimeo(data, settings.EOL_VIMEO_MAIN_FOLDER, 'https://test.test.ts', self.course.id)
         data2 = [{'edxVideoId': self.video['edx_video_id'], 'status':'vimeo_upload', 'message': 'No se pudo mover el video a la carpeta principal en Vimeo. ', 'vimeo_id':'123456789'}]
         self.assertEqual(response, data2)
 
@@ -226,6 +281,15 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
         """
             Test upload video to vimeo when fail create folder in vimeo
         """
+        EolVimeoVideo.objects.create(
+            edx_video_id = self.video["edx_video_id"],
+            user =self.user,
+            vimeo_video_id = '1122334455',
+            course_key = self.course.id,
+            url_vimeo = '',
+            status = 'vimeo_encoding',
+            error_description = ''
+        )
         get_storage.configure_mock(open=Mock(), delete=Mock())
         get_data = {'page': 1, 'total': 1, 'data': [{'uri':'/users/112233/projects/12345','name':'test'}]}
         get_data2 = {'name':self.video['client_video_id'], 'duration':self.video['duration'], 'upload': {'status': 'in_progress'}, 'files': [{'quality': 'source', 'type': 'source', 'width': 0, 'height': 0, 'link': 'https://player.vimeo.com/external/1122233344', 'created_time': '2021-06-08T14:21:04+00:00', 'fps': 30, 'size': 0, 'md5': None, 'public_name': 'Original', 'size_short': ''}]}
@@ -237,7 +301,7 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
         post.side_effect = [namedtuple("Request", ["status_code", "text"])(201, json.dumps(post_data)), namedtuple("Request", ["status_code", "json"])(401, lambda:post_data2),]
 
         data = [{'edxVideoId': self.video['edx_video_id'], 'status':'upload_completed', 'message': ''}]
-        response = vimeo_task.upload_vimeo(data, settings.EOL_VIMEO_MAIN_FOLDER, 'https://test.test.ts')
+        response = vimeo_task.upload_vimeo(data, settings.EOL_VIMEO_MAIN_FOLDER, 'https://test.test.ts', self.course.id)
         data2 = [{'edxVideoId': self.video['edx_video_id'], 'status':'vimeo_upload', 'message': 'No se pudo mover el video a la carpeta principal en Vimeo. ', 'vimeo_id':'123456789'}]
         self.assertEqual(response, data2)
 
@@ -253,6 +317,15 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
         """
             Test upload video to vimeo when fail move video to folder in vimeo
         """
+        EolVimeoVideo.objects.create(
+            edx_video_id = self.video["edx_video_id"],
+            user =self.user,
+            vimeo_video_id = '1122334455',
+            course_key = self.course.id,
+            url_vimeo = '',
+            status = 'vimeo_encoding',
+            error_description = ''
+        )
         get_storage.configure_mock(open=Mock(), delete=Mock())
         get_data = {'page': 1, 'total': 1, 'data': [{'uri':'/users/112233/projects/12345','name':'test'}]}
         get_data2 = {'name':self.video['client_video_id'], 'duration':self.video['duration'], 'upload': {'status': 'in_progress'}, 'files': [{'quality': 'source', 'type': 'source', 'width': 0, 'height': 0, 'link': 'https://player.vimeo.com/external/1122233344', 'created_time': '2021-06-08T14:21:04+00:00', 'fps': 30, 'size': 0, 'md5': None, 'public_name': 'Original', 'size_short': ''}]}
@@ -264,7 +337,7 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
         post.side_effect = [namedtuple("Request", ["status_code", "text"])(201, json.dumps(post_data)), namedtuple("Request", ["status_code", "json"])(201, lambda:post_data2),]
 
         data = [{'edxVideoId': self.video['edx_video_id'], 'status':'upload_completed', 'message': ''}]
-        response = vimeo_task.upload_vimeo(data, settings.EOL_VIMEO_MAIN_FOLDER, 'https://test.test.ts')
+        response = vimeo_task.upload_vimeo(data, settings.EOL_VIMEO_MAIN_FOLDER, 'https://test.test.ts', self.course.id)
         data2 = [{'edxVideoId': self.video['edx_video_id'], 'status':'vimeo_upload', 'message': 'No se pudo mover el video a la carpeta principal en Vimeo. ', 'vimeo_id':'123456789'}]
         self.assertEqual(response, data2)
 
@@ -280,6 +353,15 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
         """
             Test upload video to vimeo when fail add domain to video in vimeo
         """
+        EolVimeoVideo.objects.create(
+            edx_video_id = self.video["edx_video_id"],
+            user =self.user,
+            vimeo_video_id = '1122334455',
+            course_key = self.course.id,
+            url_vimeo = '',
+            status = 'vimeo_encoding',
+            error_description = ''
+        )
         get_storage.configure_mock(open=Mock(), delete=Mock())
         get_data = {'page': 1, 'total': 1, 'data': [{'uri':'/users/112233/projects/12345','name':'test'}]}
         get_data2 = {'name':self.video['client_video_id'], 'duration':self.video['duration'], 'upload': {'status': 'in_progress'}, 'files': [{'quality': 'source', 'type': 'source', 'width': 0, 'height': 0, 'link': 'https://player.vimeo.com/external/1122233344', 'created_time': '2021-06-08T14:21:04+00:00', 'fps': 30, 'size': 0, 'md5': None, 'public_name': 'Original', 'size_short': ''}]}
@@ -291,7 +373,7 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
         post.side_effect = [namedtuple("Request", ["status_code", "text"])(201, json.dumps(post_data)), namedtuple("Request", ["status_code", "json"])(201, lambda:post_data2),]
         
         data = [{'edxVideoId': self.video['edx_video_id'], 'status':'upload_completed', 'message': ''}]
-        response = vimeo_task.upload_vimeo(data, settings.EOL_VIMEO_MAIN_FOLDER, 'https://test.test.ts')
+        response = vimeo_task.upload_vimeo(data, settings.EOL_VIMEO_MAIN_FOLDER, 'https://test.test.ts', self.course.id)
         data2 = [{'edxVideoId': self.video['edx_video_id'], 'status':'vimeo_upload', 'message': 'No se pudo agregar los dominios al video en Vimeo. ', 'vimeo_id':'123456789'}]
         self.assertEqual(response, data2)
 
@@ -303,11 +385,20 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
         """
             Test upload video to vimeo when fail storage_class 
         """
+        EolVimeoVideo.objects.create(
+            edx_video_id = self.video["edx_video_id"],
+            user =self.user,
+            vimeo_video_id = '1122334455',
+            course_key = self.course.id,
+            url_vimeo = '',
+            status = 'vimeo_encoding',
+            error_description = ''
+        )
         post_data = {'upload': {'status': 'error'}, 'uri': '/videos/123456789'}
         post.side_effect = [namedtuple("Request", ["status_code", "text"])(201, json.dumps(post_data)),]
 
         data = [{'edxVideoId': self.video['edx_video_id'], 'status':'upload_completed', 'message': ''}]
-        response = vimeo_task.upload_vimeo(data, settings.EOL_VIMEO_MAIN_FOLDER, 'https://test.test.ts')
+        response = vimeo_task.upload_vimeo(data, settings.EOL_VIMEO_MAIN_FOLDER, 'https://test.test.ts', self.course.id)
         data2 = [{'edxVideoId': self.video['edx_video_id'], 'status':'upload_failed', 'message': 'No se pudo subir el video a Vimeo. ', 'vimeo_id':''}]
         self.assertEqual(response, data2)
 
@@ -320,11 +411,20 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
         """
             Test upload video to vimeo when upload video to vimeo
         """
+        EolVimeoVideo.objects.create(
+            edx_video_id = self.video["edx_video_id"],
+            user =self.user,
+            vimeo_video_id = '1122334455',
+            course_key = self.course.id,
+            url_vimeo = '',
+            status = 'vimeo_encoding',
+            error_description = ''
+        )
         get_storage.configure_mock(open=Mock(), delete=Mock())
         post.side_effect = [namedtuple("Request", ["status_code", "text"])(400, 'error'),]
 
         data = [{'edxVideoId': self.video['edx_video_id'], 'status':'upload_completed', 'message': ''}]
-        response = vimeo_task.upload_vimeo(data, settings.EOL_VIMEO_MAIN_FOLDER, 'https://test.test.ts')
+        response = vimeo_task.upload_vimeo(data, settings.EOL_VIMEO_MAIN_FOLDER, 'https://test.test.ts', self.course.id)
         data2 = [{'edxVideoId': self.video['edx_video_id'], 'status':'upload_failed', 'message': 'No se pudo subir el video a Vimeo. ', 'vimeo_id':''}]
         self.assertEqual(response, data2)
 
@@ -334,9 +434,18 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
         """
             Test upload video to vimeo when credentials are not defined
         """
+        EolVimeoVideo.objects.create(
+            edx_video_id = self.video["edx_video_id"],
+            user =self.user,
+            vimeo_video_id = '1122334455',
+            course_key = self.course.id,
+            url_vimeo = '',
+            status = 'vimeo_encoding',
+            error_description = ''
+        )
         get_storage.configure_mock(open=Mock(), delete=Mock())
         data = [{'edxVideoId': self.video['edx_video_id'], 'status':'upload_completed', 'message': ''}]
-        response = vimeo_task.upload_vimeo(data, settings.EOL_VIMEO_MAIN_FOLDER, 'https://test.test.ts')
+        response = vimeo_task.upload_vimeo(data, settings.EOL_VIMEO_MAIN_FOLDER, 'https://test.test.ts', self.course.id)
         data2 = [{'edxVideoId': self.video['edx_video_id'], 'status':'upload_failed', 'message': 'No se pudo subir el video a Vimeo. ', 'vimeo_id':''}]
         self.assertEqual(response, data2)
 
@@ -784,3 +893,126 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
         video = get_video_info(self.video["edx_video_id"])
         self.assertEqual(video['status'], 'vimeo_patch_failed')
         self.assertEqual(eolvimeo.status, 'vimeo_patch_failed')
+
+class TestEolVimeoView(UrlResetMixin, ModuleStoreTestCase):
+    def setUp(self):
+        super(TestEolVimeoView, self).setUp()
+        # create a course
+        self.course = CourseFactory.create(
+            org='mss', course='999', display_name='eol_test_course')
+        self.video = {
+            "edx_video_id": "123-456-789",
+            "client_video_id": "test.mp4",
+            "duration": 10,
+            "status": 'vimeo_upload',
+            "courses":  [text_type(self.course.id)],
+            "created": datetime.datetime.now(pytz.utc),
+            "encoded_videos": [],
+        }
+        self.video2 = {
+            "edx_video_id": "789-456-123",
+            "client_video_id": "test2.mp4",
+            "duration": 10,
+            "status": 'vimeo_upload',
+            "courses":  [text_type(self.course.id)],
+            "created": datetime.datetime.now(pytz.utc),
+            "encoded_videos": [],
+        }
+        create_profile("desktop_mp4")
+        create_video(self.video)
+        create_video(self.video2)
+        self.client = Client()
+        with patch('common.djangoapps.student.models.cc.User.save'):
+            # staff user
+            self.user = UserFactory(
+                username='testuser2',
+                password='12345',
+                email='student2@edx.org',
+                is_staff=True)
+        EolVimeoVideo.objects.create(
+            edx_video_id = self.video["edx_video_id"],
+            user =self.user,
+            vimeo_video_id = '1122334455',
+            course_key = self.course.id,
+            url_vimeo = '',
+            status = 'vimeo_upload',
+            error_description = '',
+            token='123asd456asd789asd',
+            expiry_at=datetime.datetime.utcnow() + datetime.timedelta(seconds=300)
+        )
+        EolVimeoVideo.objects.create(
+            edx_video_id = self.video2["edx_video_id"],
+            user =self.user,
+            vimeo_video_id = '1122334455',
+            course_key = self.course.id,
+            url_vimeo = '',
+            status = 'vimeo_upload',
+            error_description = '',
+            token='123asd456asd789asd',
+            expiry_at=datetime.datetime.utcnow() - datetime.timedelta(seconds=301)
+        )
+
+    @patch('eol_vimeo.views.get_url_video')
+    def test_vimeo_callback(self, mock_url_video):
+        """
+            Test vimeo_callback normal process
+        """
+        mock_url_video.return_value = 'https://s3.test.test.ts/path-video-s3'
+        result = self.client.get(
+            reverse('vimeo_callback'),
+            data={
+                'videoid': self.video["edx_video_id"],
+                'token': '123asd456asd789asd'})
+        self.assertEqual(result.status_code, 302)
+        request = urllib.parse.urlparse(result.url)
+        self.assertEqual(request.netloc, 's3.test.test.ts')
+        self.assertEqual(request.path, '/path-video-s3')
+    
+    def test_vimeo_callback_wrong_token(self):
+        """
+            Test vimeo_callback when token is wrong
+        """
+        result = self.client.get(
+            reverse('vimeo_callback'),
+            data={
+                'videoid': self.video["edx_video_id"],
+                'token': 'asdasdadsadad'})
+        self.assertEqual(result.status_code, 400)
+
+    def test_vimeo_callback_wrong_id(self):
+        """
+            Test vimeo_callback when edx_video_id is wrong
+        """
+        result = self.client.get(
+            reverse('vimeo_callback'),
+            data={
+                'videoid': '456-456789-456',
+                'token': '123asd456asd789asd'})
+        self.assertEqual(result.status_code, 400)
+
+    def test_vimeo_callback_no_params(self):
+        """
+            Test vimeo_callback when edx_video_id or token isn ot in url
+        """
+        result = self.client.get(
+            reverse('vimeo_callback'))
+        self.assertEqual(result.status_code, 400)
+
+    def test_vimeo_callback_post(self):
+        """
+            Test vimeo_callback when is POST
+        """
+        result = self.client.post(
+            reverse('vimeo_callback'))
+        self.assertEqual(result.status_code, 400)
+    
+    def test_vimeo_callback_expired(self):
+        """
+            Test vimeo_callback when token expired
+        """
+        result = self.client.get(
+            reverse('vimeo_callback'),
+            data={
+                'videoid': self.video2["edx_video_id"],
+                'token': '123asd456asd789asd'})
+        self.assertEqual(result.status_code, 400)

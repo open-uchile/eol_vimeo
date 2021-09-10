@@ -31,6 +31,7 @@ from django.core.files.storage import get_storage_class
 from .models import EolVimeoVideo
 from cms.djangoapps.contentstore.views import videos
 from edxval.api import update_video_status
+import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -195,11 +196,12 @@ def get_folders(page, client, name_folder):
         logger.exception('EolVimeo - Exception: %s' % str(e))
         return 'Error', next_step
 
-def upload(id_file, domain):
+def upload(id_file, domain, course_id):
     """
         Upload the video file to Vimeo
     """
-    upload_url = '{}{}?videoid={}'.format(domain, reverse('vimeo_callback'), id_file)
+    video_vimeo = EolVimeoVideo.objects.get(edx_video_id=id_file, course_key=course_id)
+    upload_url = '{}{}?videoid={}&token={}'.format(domain, reverse('vimeo_callback'), id_file, video_vimeo.token)
     if not check_credentials():
         logger.info('EolVimeo - Credentials are not defined')
         return 'Error'
@@ -273,7 +275,7 @@ def get_link_video_best_quality(video_data):
     #return best quality link
     return data[sort_key[0]]
 
-def update_create_vimeo_model(edxVideoId, user_id, status, message, course_key_string, url='', vimeo_id=''):
+def update_create_vimeo_model(edxVideoId, user_id, status, message, course_key_string, url='', vimeo_id='', token=''):
     """
         Create or Update EolVimeoVideo
     """
@@ -285,6 +287,9 @@ def update_create_vimeo_model(edxVideoId, user_id, status, message, course_key_s
         data['url_vimeo'] = url
     if vimeo_id != '':
         data['vimeo_video_id'] = vimeo_id
+    if token != '':
+        data['token'] = token
+        data['expiry_at'] = datetime.datetime.utcnow() + datetime.timedelta(seconds=300)
     try:
         course_key = CourseKey.from_string(course_key_string)
         data['course_key'] = course_key

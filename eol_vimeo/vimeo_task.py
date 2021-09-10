@@ -34,7 +34,7 @@ from edxval.api import update_video_status
 from django.core.files.storage import get_storage_class
 logger = logging.getLogger(__name__)
 
-def upload_vimeo(data, name_folder, domain):
+def upload_vimeo(data, name_folder, domain, course_id):
     """
         Upload video from edxval to vimeo.
         only upload video with status 'upload_completed'
@@ -43,7 +43,7 @@ def upload_vimeo(data, name_folder, domain):
     for video in data:
         video_info = {'edxVideoId': video.get('edxVideoId'), 'status':'', 'message': '', 'vimeo_id':''}
         if video.get('status') == 'upload_completed':
-            uri_video = upload(video.get('edxVideoId'), domain)
+            uri_video = upload(video.get('edxVideoId'), domain, course_id)
             if uri_video == 'Error':
                 video_info['status'] = 'upload_failed'
                 video_info['message'] = 'No se pudo subir el video a Vimeo. '
@@ -93,7 +93,7 @@ def task_get_data(
     start_time = time()
     task_progress = TaskProgress(action_name, 1, start_time)
 
-    response = upload_vimeo(task_input['data'], task_input['name_folder'], task_input['domain'])
+    response = upload_vimeo(task_input['data'], task_input['name_folder'], task_input['domain'], course_id)
     for video in response:
         update_create_vimeo_model(video['edxVideoId'], user_id, video['status'], video['message'], str(course_id), vimeo_id=video['vimeo_id'])
     current_step = {'step': 'Uploading Video to Vimeo'}
