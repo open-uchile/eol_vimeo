@@ -30,3 +30,5 @@ class EolVimeoVideo(models.Model):
     url_vimeo = models.CharField(max_length=255, blank=True)
     status = models.CharField(max_length=50, blank=True)
     error_description = models.TextField('Error Description', blank=True, null=True)
+    token = models.CharField(max_length=50, default='', blank=True)
+    expiry_at = models.DateTimeField(null=True, default=None, blank=True)
