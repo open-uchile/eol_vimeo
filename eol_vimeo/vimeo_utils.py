@@ -109,7 +109,7 @@ def get_video_vimeo(id_video):
     if client is None:
         return {}
     try:
-        response = client.get('/videos/{}'.format(id_video), params={"fields": "name,duration,files,upload"})
+        response = client.get('/videos/{}'.format(id_video), params={"fields": "name,duration,files,upload,status,transcode"})
         if response.status_code == 200:
             return response.json()
         else:
@@ -375,32 +375,58 @@ def update_video_vimeo(course_id=None):
                 video.error_description = 'Video no se subio correctamente a Vimeo. '
                 video.save()
                 update_video_status(video.edx_video_id, 'upload_failed')
+            elif video_data['upload']['status'] == 'in_progress':
+                logger.info('EolVimeo - Video is still uploading, edx_video_id: {}'.format(video.edx_video_id))
+                video.status = 'vimeo_upload'
+                video.error_description = 'Vimeo todavia esta subiendo el video. '
+                video.save()
+                update_video_status(video.edx_video_id, 'vimeo_upload')
             elif 'files' not in video_data or len(video_data['files']) == 0:
                 video.error_description = 'No se pudo obtener los links del video en Vimeo. '
                 video.save()
             else:
-                quality_video = get_link_video(video_data)
-                video_name = '{} {}'.format(video_data['name'], quality_video['public_name'])
-                if quality_video['public_name'] == 'Original':
-                    logger.info('EolVimeo - Video is still processing, edx_video_id: {}'.format(video.edx_video_id))
-                    error_description = 'Vimeo todavia esta procesando el video.'
-                    status_video = 'vimeo_encoding'
+                if video_data['status'] in ['transcoding', 'available', 'transcode_starting', 'uploading']:
+                    if 'transcode' not in video_data or len(video_data['transcode']) == 0 or video_data['transcode']['status'] == 'error':
+                        logger.info('EolVimeo - transcode video error, edx_video_id: {}, id_vimeo: {}'.format(video.edx_video_id, video.vimeo_video_id))
+                        video.status = 'upload_failed'
+                        video.error_description = 'Video no fue procesado correctamente en Vimeo. '
+                        video.save()
+                        update_video_status(video.edx_video_id, 'upload_failed')
+                    elif video_data['transcode']['status'] == 'in_progress':
+                        logger.info('EolVimeo - Video is still processing, edx_video_id: {}'.format(video.edx_video_id))
+                        video.status = 'vimeo_encoding'
+                        video.error_description = 'Vimeo todavia esta procesando el video.'
+                        video.save()
+                        update_video_status(video.edx_video_id, 'vimeo_encoding')
+                    else:
+                        quality_video = get_link_video(video_data)
+                        video_name = '{} {}'.format(video_data['name'], quality_video['public_name'])
+                        if quality_video['public_name'] == 'Original':
+                            logger.info('EolVimeo - Video is still processing, edx_video_id: {}'.format(video.edx_video_id))
+                            error_description = 'Vimeo todavia esta procesando el video.'
+                            status_video = 'vimeo_encoding'
+                        else:
+                            status_video = 'upload_completed'
+                            error_description = 'upload_completed'
+                        video.url_vimeo = quality_video['link']
+                        video.status = status_video
+                        video.error_description = error_description
+                        video.save()
+                        is_updated = update_edxval_url(video.edx_video_id, quality_video['link'], quality_video['size'], video_name, video_data['duration'], status_video)
+                        if is_updated:
+                            logger.info('EolVimeo - Video upload completed, edx_video_id: {}'.format(video.edx_video_id))
+                            get_storage().delete(video.edx_video_id)
+                        else:
+                            logger.info('EolVimeo - error update_video in edxval.api, edx_video_id: {}'.format(video.edx_video_id))
+                            video.error_description = 'No se pudo agregar el path vimeo del video al video en plataforma(error update_video in edxval.api). '
+                            video.status = 'vimeo_patch_failed'
+                            video.save()
+                            update_video_status(video.edx_video_id, 'vimeo_patch_failed')
                 else:
-                    status_video = 'upload_completed'
-                    error_description = 'upload_completed'
-                video.url_vimeo = quality_video['link']
-                video.status = status_video
-                video.error_description = error_description
-                video.save()
-                is_updated = update_edxval_url(video.edx_video_id, quality_video['link'], quality_video['size'], video_name, video_data['duration'], status_video)
-                if is_updated:
-                    logger.info('EolVimeo - Video upload completed, edx_video_id: {}'.format(video.edx_video_id))
-                    get_storage().delete(video.edx_video_id)
-                else:
-                    logger.info('EolVimeo - error update_video in edxval.api, edx_video_id: {}'.format(video.edx_video_id))
-                    video.error_description = 'No se pudo agregar el path vimeo del video al video en plataforma(error update_video in edxval.api). '
-                    video.status = 'vimeo_patch_failed'
+                    logger.info('EolVimeo - video was not uploaded correctly, edx_video_id: {}, id_vimeo: {}'.format(video.edx_video_id, video.vimeo_video_id))
+                    video.status = 'upload_failed'
+                    video.error_description = 'Video no se subio correctamente a Vimeo. status={}'.format(video_data['status'])
                     video.save()
-                    update_video_status(video.edx_video_id, 'vimeo_patch_failed')
+                    update_video_status(video.edx_video_id, 'upload_failed')
     else:
         logger.info('EolVimeo - Credentials are not defined')

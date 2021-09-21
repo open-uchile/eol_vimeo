@@ -97,7 +97,7 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
         )
         get_storage.configure_mock(open=Mock(), delete=Mock())
         get_data = {'page': 1, 'total': 1, 'data': [{'uri':'/users/112233/projects/12345','name':'test'}]}
-        get_data2 = {'name':self.video['client_video_id'], 'duration':self.video['duration'], 'upload': {'status': 'in_progress'}, 'files': [{'quality': 'source', 'type': 'source', 'width': 0, 'height': 0, 'link': 'https://player.vimeo.com/external/1122233344', 'created_time': '2021-06-08T14:21:04+00:00', 'fps': 30, 'size': 0, 'md5': None, 'public_name': 'Original', 'size_short': ''}]}
+        get_data2 = {'name':self.video['client_video_id'], 'status':'available', 'transcode': {'status': 'in_progress'},'duration':self.video['duration'], 'upload': {'status': 'in_progress'}, 'files': [{'quality': 'source', 'type': 'source', 'width': 0, 'height': 0, 'link': 'https://player.vimeo.com/external/1122233344', 'created_time': '2021-06-08T14:21:04+00:00', 'fps': 30, 'size': 0, 'md5': None, 'public_name': 'Original', 'size_short': ''}]}
         post_data = {'upload': {'status': 'in_progress'}, 'uri': '/videos/123456789'}
         post_data2 = {'uri': '/users/112233/projects/995577'}
 
@@ -143,7 +143,7 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
         get_storage.configure_mock(open=Mock(), delete=Mock())
         
         get_data = {'page': 1, 'total': 1, 'data': [{'uri':'/users/112233/projects/12345','name':'Studio Eol'}]}
-        get_data2 = {'name':self.video['client_video_id'], 'duration':self.video['duration'], 'upload': {'status': 'in_progress'}, 'files': [{'quality': 'source', 'type': 'source', 'width': 0, 'height': 0, 'link': 'https://player.vimeo.com/external/1122233344', 'created_time': '2021-06-08T14:21:04+00:00', 'fps': 30, 'size': 0, 'md5': None, 'public_name': 'Original', 'size_short': ''}]}
+        get_data2 = {'name':self.video['client_video_id'], 'status':'available', 'transcode': {'status': 'in_progress'}, 'duration':self.video['duration'], 'upload': {'status': 'in_progress'}, 'files': [{'quality': 'source', 'type': 'source', 'width': 0, 'height': 0, 'link': 'https://player.vimeo.com/external/1122233344', 'created_time': '2021-06-08T14:21:04+00:00', 'fps': 30, 'size': 0, 'md5': None, 'public_name': 'Original', 'size_short': ''}]}
         post_data = {'upload': {'status': 'in_progress'}, 'uri': '/videos/123456789'}
 
         put.side_effect = [namedtuple("Request", ["status_code"])(204),namedtuple("Request", ["status_code"])(204),namedtuple("Request", ["status_code"])(204),
@@ -187,7 +187,7 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
         )
         get_storage.configure_mock(open=Mock(), delete=Mock())
         get_data = {'page': 1, 'total': 1, 'data': [{'uri':'/users/112233/projects/12345','name':'Studio Eol'}]}
-        get_data2 = {'name':self.video['client_video_id'], 'duration':self.video['duration'], 'upload': {'status': 'in_progress'}, 'files': [{'quality': 'source', 'type': 'source', 'width': 0, 'height': 0, 'link': 'https://player.vimeo.com/external/1122233344', 'created_time': '2021-06-08T14:21:04+00:00', 'fps': 30, 'size': 0, 'md5': None, 'public_name': 'Original', 'size_short': ''}]}
+        get_data2 = {'name':self.video['client_video_id'], 'status':'available', 'transcode': {'status': 'in_progress'}, 'duration':self.video['duration'], 'upload': {'status': 'in_progress'}, 'files': [{'quality': 'source', 'type': 'source', 'width': 0, 'height': 0, 'link': 'https://player.vimeo.com/external/1122233344', 'created_time': '2021-06-08T14:21:04+00:00', 'fps': 30, 'size': 0, 'md5': None, 'public_name': 'Original', 'size_short': ''}]}
         post_data = {'upload': {'status': 'in_progress'}, 'uri': '/videos/123456789'}
         put.side_effect = [namedtuple("Request", ["status_code"])(204),namedtuple("Request", ["status_code"])(204),namedtuple("Request", ["status_code"])(204),]
         get.side_effect = [namedtuple("Request", ["status_code", "json"])(200, lambda:get_data), namedtuple("Request", ["status_code", "json"])(200, lambda:get_data2),]
@@ -257,7 +257,7 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
         )
         get_storage.configure_mock(open=Mock(), delete=Mock())
         get_data = {'error': 'Something strange occurred. Please contact the app owners.', 'link': None, 'developer_message': 'The credentials provided are invalid.', 'error_code': 8000}
-        get_data2 = {'name':self.video['client_video_id'], 'duration':self.video['duration'], 'upload': {'status': 'in_progress'}, 'files': [{'quality': 'source', 'type': 'source', 'width': 0, 'height': 0, 'link': 'https://player.vimeo.com/external/1122233344', 'created_time': '2021-06-08T14:21:04+00:00', 'fps': 30, 'size': 0, 'md5': None, 'public_name': 'Original', 'size_short': ''}]}
+        get_data2 = {'name':self.video['client_video_id'], 'status':'available', 'transcode': {'status': 'in_progress'}, 'duration':self.video['duration'], 'upload': {'status': 'in_progress'}, 'files': [{'quality': 'source', 'type': 'source', 'width': 0, 'height': 0, 'link': 'https://player.vimeo.com/external/1122233344', 'created_time': '2021-06-08T14:21:04+00:00', 'fps': 30, 'size': 0, 'md5': None, 'public_name': 'Original', 'size_short': ''}]}
         post_data = {'upload': {'status': 'in_progress'}, 'uri': '/videos/123456789'}
 
         put.side_effect = [namedtuple("Request", ["status_code"])(204),namedtuple("Request", ["status_code"])(204),]
@@ -292,7 +292,7 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
         )
         get_storage.configure_mock(open=Mock(), delete=Mock())
         get_data = {'page': 1, 'total': 1, 'data': [{'uri':'/users/112233/projects/12345','name':'test'}]}
-        get_data2 = {'name':self.video['client_video_id'], 'duration':self.video['duration'], 'upload': {'status': 'in_progress'}, 'files': [{'quality': 'source', 'type': 'source', 'width': 0, 'height': 0, 'link': 'https://player.vimeo.com/external/1122233344', 'created_time': '2021-06-08T14:21:04+00:00', 'fps': 30, 'size': 0, 'md5': None, 'public_name': 'Original', 'size_short': ''}]}
+        get_data2 = {'name':self.video['client_video_id'], 'status':'available', 'transcode': {'status': 'in_progress'}, 'duration':self.video['duration'], 'upload': {'status': 'in_progress'}, 'files': [{'quality': 'source', 'type': 'source', 'width': 0, 'height': 0, 'link': 'https://player.vimeo.com/external/1122233344', 'created_time': '2021-06-08T14:21:04+00:00', 'fps': 30, 'size': 0, 'md5': None, 'public_name': 'Original', 'size_short': ''}]}
         post_data = {'upload': {'status': 'in_progress'}, 'uri': '/videos/123456789'}
         post_data2 = {'error': 'Something strange occurred. Please contact the app owners.', 'link': None, 'developer_message': 'The credentials provided are invalid.', 'error_code': 8000}
         
@@ -328,7 +328,7 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
         )
         get_storage.configure_mock(open=Mock(), delete=Mock())
         get_data = {'page': 1, 'total': 1, 'data': [{'uri':'/users/112233/projects/12345','name':'test'}]}
-        get_data2 = {'name':self.video['client_video_id'], 'duration':self.video['duration'], 'upload': {'status': 'in_progress'}, 'files': [{'quality': 'source', 'type': 'source', 'width': 0, 'height': 0, 'link': 'https://player.vimeo.com/external/1122233344', 'created_time': '2021-06-08T14:21:04+00:00', 'fps': 30, 'size': 0, 'md5': None, 'public_name': 'Original', 'size_short': ''}]}
+        get_data2 = {'name':self.video['client_video_id'], 'status':'available', 'transcode': {'status': 'in_progress'}, 'duration':self.video['duration'], 'upload': {'status': 'in_progress'}, 'files': [{'quality': 'source', 'type': 'source', 'width': 0, 'height': 0, 'link': 'https://player.vimeo.com/external/1122233344', 'created_time': '2021-06-08T14:21:04+00:00', 'fps': 30, 'size': 0, 'md5': None, 'public_name': 'Original', 'size_short': ''}]}
         post_data = {'upload': {'status': 'in_progress'}, 'uri': '/videos/123456789'}
         post_data2 = {'uri': '/users/112233/projects/995577'}
         put_data = {'error': 'Your access token does not have the "interact" scope'}
@@ -364,7 +364,7 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
         )
         get_storage.configure_mock(open=Mock(), delete=Mock())
         get_data = {'page': 1, 'total': 1, 'data': [{'uri':'/users/112233/projects/12345','name':'test'}]}
-        get_data2 = {'name':self.video['client_video_id'], 'duration':self.video['duration'], 'upload': {'status': 'in_progress'}, 'files': [{'quality': 'source', 'type': 'source', 'width': 0, 'height': 0, 'link': 'https://player.vimeo.com/external/1122233344', 'created_time': '2021-06-08T14:21:04+00:00', 'fps': 30, 'size': 0, 'md5': None, 'public_name': 'Original', 'size_short': ''}]}
+        get_data2 = {'name':self.video['client_video_id'], 'status':'available', 'transcode': {'status': 'in_progress'}, 'duration':self.video['duration'], 'upload': {'status': 'in_progress'}, 'files': [{'quality': 'source', 'type': 'source', 'width': 0, 'height': 0, 'link': 'https://player.vimeo.com/external/1122233344', 'created_time': '2021-06-08T14:21:04+00:00', 'fps': 30, 'size': 0, 'md5': None, 'public_name': 'Original', 'size_short': ''}]}
         post_data = {'upload': {'status': 'in_progress'}, 'uri': '/videos/123456789'}
         post_data2 = {'uri': '/users/112233/projects/995577'}
         put_data = {'error': 'Something strange occurred. Please contact the app owners.', 'link': None, 'developer_message': 'The credentials provided are invalid.', 'error_code': 8000}
@@ -683,8 +683,8 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
             error_description = ''
         )
         get_storage.configure_mock(open=Mock(), delete=Mock())
-        get_data = {'name':self.video['client_video_id'], 'duration':self.video['duration'], 'upload': {'status': 'complete'}, 'files': [{'quality': 'source', 'type': 'source', 'width': 0, 'height': 0, 'link': 'https://player.vimeo.com/external/1122233344', 'created_time': '2021-06-08T14:21:04+00:00', 'fps': 30, 'size': 0, 'md5': None, 'public_name': 'HD', 'size_short': ''}]}
-        get_data2 = {'name':self.video2['client_video_id'], 'duration':self.video2['duration'], 'upload': {'status': 'complete'}, 'files': [{'quality': 'source', 'type': 'source', 'width': 0, 'height': 0, 'link': 'https://player.vimeo.com/external/9922233344', 'created_time': '2021-06-08T14:21:04+00:00', 'fps': 30, 'size': 0, 'md5': None, 'public_name': 'HD', 'size_short': ''}]}
+        get_data = {'name':self.video['client_video_id'], 'status':'available', 'transcode': {'status': 'complete'}, 'duration':self.video['duration'], 'upload': {'status': 'complete'}, 'files': [{'quality': 'source', 'type': 'source', 'width': 0, 'height': 0, 'link': 'https://player.vimeo.com/external/1122233344', 'created_time': '2021-06-08T14:21:04+00:00', 'fps': 30, 'size': 0, 'md5': None, 'public_name': 'HD', 'size_short': ''}]}
+        get_data2 = {'name':self.video2['client_video_id'], 'status':'available', 'transcode': {'status': 'complete'}, 'duration':self.video2['duration'], 'upload': {'status': 'complete'}, 'files': [{'quality': 'source', 'type': 'source', 'width': 0, 'height': 0, 'link': 'https://player.vimeo.com/external/9922233344', 'created_time': '2021-06-08T14:21:04+00:00', 'fps': 30, 'size': 0, 'md5': None, 'public_name': 'HD', 'size_short': ''}]}
         get.side_effect = [namedtuple("Request", ["status_code", "json"])(200, lambda:get_data),namedtuple("Request", ["status_code", "json"])(200, lambda:get_data2),]
         vimeo_utils.update_video_vimeo(str(self.course.id))
         eolvimeo1 = EolVimeoVideo.objects.get(edx_video_id=self.video["edx_video_id"])
@@ -752,8 +752,8 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
             error_description = ''
         )
         get_storage.configure_mock(open=Mock(), delete=Mock())
-        get_data = {'name':self.video['client_video_id'], 'duration':self.video['duration'], 'upload': {'status': 'complete'}, 'files': [{'quality': 'source', 'type': 'source', 'width': 0, 'height': 0, 'link': 'https://player.vimeo.com/external/1122233344', 'created_time': '2021-06-08T14:21:04+00:00', 'fps': 30, 'size': 0, 'md5': None, 'public_name': 'HD', 'size_short': ''}]}
-        get_data2 = {'name':self.video2['client_video_id'], 'duration':self.video2['duration'], 'upload': {'status': 'complete'}, 'files': [{'quality': 'source', 'type': 'source', 'width': 0, 'height': 0, 'link': 'https://player.vimeo.com/external/9922233344', 'created_time': '2021-06-08T14:21:04+00:00', 'fps': 30, 'size': 0, 'md5': None, 'public_name': 'HD', 'size_short': ''}]}
+        get_data = {'name':self.video['client_video_id'], 'status':'available', 'transcode': {'status': 'complete'}, 'duration':self.video['duration'], 'upload': {'status': 'complete'}, 'files': [{'quality': 'source', 'type': 'source', 'width': 0, 'height': 0, 'link': 'https://player.vimeo.com/external/1122233344', 'created_time': '2021-06-08T14:21:04+00:00', 'fps': 30, 'size': 0, 'md5': None, 'public_name': 'HD', 'size_short': ''}]}
+        get_data2 = {'name':self.video2['client_video_id'], 'status':'available', 'transcode': {'status': 'complete'},  'duration':self.video2['duration'], 'upload': {'status': 'complete'}, 'files': [{'quality': 'source', 'type': 'source', 'width': 0, 'height': 0, 'link': 'https://player.vimeo.com/external/9922233344', 'created_time': '2021-06-08T14:21:04+00:00', 'fps': 30, 'size': 0, 'md5': None, 'public_name': 'HD', 'size_short': ''}]}
         get.side_effect = [namedtuple("Request", ["status_code", "json"])(200, lambda:get_data),namedtuple("Request", ["status_code", "json"])(200, lambda:get_data2),]
         vimeo_utils.update_video_vimeo()
         eolvimeo1 = EolVimeoVideo.objects.get(edx_video_id=self.video["edx_video_id"])
@@ -805,13 +805,91 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
             status = 'vimeo_encoding',
             error_description = ''
         )
-        get_data = {'name':self.video['client_video_id'], 'duration':self.video['duration'], 'upload': {'status': 'error'}, 'files': []}
+        get_data = {'name':self.video['client_video_id'], 'status':'available', 'transcode': {'status': 'complete'}, 'duration':self.video['duration'], 'upload': {'status': 'error'}, 'files': []}
         get.side_effect = [namedtuple("Request", ["status_code", "json"])(200, lambda:get_data),]
         vimeo_utils.update_video_vimeo()
         eolvimeo = EolVimeoVideo.objects.get(edx_video_id=self.video["edx_video_id"])
         video = get_video_info(self.video["edx_video_id"])
         self.assertEqual(video['status'], 'upload_failed')
         self.assertEqual(eolvimeo.status, 'upload_failed')
+
+    @patch('requests.get')
+    @override_settings(EOL_VIMEO_CLIENT_ID='1234567890asdfgh')
+    @override_settings(EOL_VIMEO_CLIENT_SECRET='1234567890asdfgh')
+    @override_settings(EOL_VIMEO_CLIENT_TOKEN='1234567890asdfgh')
+    def test_update_video_vimeo_upload_error_status(self, get):
+        """
+            Test update_video_vimeo when upload video failed
+        """
+        EolVimeoVideo.objects.create(
+            edx_video_id = self.video["edx_video_id"],
+            user =self.user,
+            vimeo_video_id = '1122334455',
+            course_key = self.course.id,
+            url_vimeo = '',
+            status = 'vimeo_encoding',
+            error_description = ''
+        )
+        get_data = {'name':self.video['client_video_id'], 'status':'uploading_error', 'transcode': {'status': 'complete'}, 'duration':self.video['duration'], 'upload': {'status': 'complete'}, 'files': [{'quality': 'source', 'type': 'source', 'width': 0, 'height': 0, 'link': 'https://player.vimeo.com/external/1122233344', 'created_time': '2021-06-08T14:21:04+00:00', 'fps': 30, 'size': 0, 'md5': None, 'public_name': 'Original', 'size_short': ''}]}
+        get.side_effect = [namedtuple("Request", ["status_code", "json"])(200, lambda:get_data),]
+        vimeo_utils.update_video_vimeo()
+        eolvimeo = EolVimeoVideo.objects.get(edx_video_id=self.video["edx_video_id"])
+        video = get_video_info(self.video["edx_video_id"])
+        self.assertEqual(video['status'], 'upload_failed')
+        self.assertEqual(eolvimeo.status, 'upload_failed')
+        self.assertEqual(eolvimeo.error_description, 'Video no se subio correctamente a Vimeo. status=uploading_error')
+
+    @patch('requests.get')
+    @override_settings(EOL_VIMEO_CLIENT_ID='1234567890asdfgh')
+    @override_settings(EOL_VIMEO_CLIENT_SECRET='1234567890asdfgh')
+    @override_settings(EOL_VIMEO_CLIENT_TOKEN='1234567890asdfgh')
+    def test_update_video_vimeo_upload_error_transcode(self, get):
+        """
+            Test update_video_vimeo when transcode video failed
+        """
+        EolVimeoVideo.objects.create(
+            edx_video_id = self.video["edx_video_id"],
+            user =self.user,
+            vimeo_video_id = '1122334455',
+            course_key = self.course.id,
+            url_vimeo = '',
+            status = 'vimeo_encoding',
+            error_description = ''
+        )
+        get_data = {'name':self.video['client_video_id'], 'status':'available', 'transcode': {'status': 'error'}, 'duration':self.video['duration'], 'upload': {'status': 'complete'}, 'files': [{'quality': 'source', 'type': 'source', 'width': 0, 'height': 0, 'link': 'https://player.vimeo.com/external/1122233344', 'created_time': '2021-06-08T14:21:04+00:00', 'fps': 30, 'size': 0, 'md5': None, 'public_name': 'Original', 'size_short': ''}]}
+        get.side_effect = [namedtuple("Request", ["status_code", "json"])(200, lambda:get_data),]
+        vimeo_utils.update_video_vimeo()
+        eolvimeo = EolVimeoVideo.objects.get(edx_video_id=self.video["edx_video_id"])
+        video = get_video_info(self.video["edx_video_id"])
+        self.assertEqual(video['status'], 'upload_failed')
+        self.assertEqual(eolvimeo.status, 'upload_failed')
+        self.assertEqual(eolvimeo.error_description, 'Video no fue procesado correctamente en Vimeo. ')
+
+    @patch('requests.get')
+    @override_settings(EOL_VIMEO_CLIENT_ID='1234567890asdfgh')
+    @override_settings(EOL_VIMEO_CLIENT_SECRET='1234567890asdfgh')
+    @override_settings(EOL_VIMEO_CLIENT_TOKEN='1234567890asdfgh')
+    def test_update_video_vimeo_upload_transcode_in_progress(self, get):
+        """
+            Test update_video_vimeo when video is still encoding in vimeo
+        """
+        EolVimeoVideo.objects.create(
+            edx_video_id = self.video["edx_video_id"],
+            user =self.user,
+            vimeo_video_id = '1122334455',
+            course_key = self.course.id,
+            url_vimeo = '',
+            status = 'vimeo_upload',
+            error_description = ''
+        )
+        get_data = {'name':self.video['client_video_id'], 'status':'available', 'transcode': {'status': 'in_progress'}, 'duration':self.video['duration'], 'upload': {'status': 'complete'}, 'files': [{'quality': 'source', 'type': 'source', 'width': 0, 'height': 0, 'link': 'https://player.vimeo.com/external/1122233344', 'created_time': '2021-06-08T14:21:04+00:00', 'fps': 30, 'size': 0, 'md5': None, 'public_name': 'Original', 'size_short': ''}]}
+        get.side_effect = [namedtuple("Request", ["status_code", "json"])(200, lambda:get_data),]
+        vimeo_utils.update_video_vimeo()
+        eolvimeo = EolVimeoVideo.objects.get(edx_video_id=self.video["edx_video_id"])
+        video = get_video_info(self.video["edx_video_id"])
+        self.assertEqual(video['status'], 'vimeo_encoding')
+        self.assertEqual(eolvimeo.status, 'vimeo_encoding')
+        self.assertEqual(eolvimeo.error_description, 'Vimeo todavia esta procesando el video.')
 
     @patch('requests.get')
     @override_settings(EOL_VIMEO_CLIENT_ID='1234567890asdfgh')
@@ -830,7 +908,7 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
             status = 'vimeo_upload',
             error_description = ''
         )
-        get_data = {'name':self.video['client_video_id'], 'duration':self.video['duration'], 'upload': {'status': 'complete'}, 'files': []}
+        get_data = {'name':self.video['client_video_id'], 'status':'available', 'transcode': {'status': 'complete'}, 'duration':self.video['duration'], 'upload': {'status': 'complete'}, 'files': []}
         get.side_effect = [namedtuple("Request", ["status_code", "json"])(200, lambda:get_data),]
         vimeo_utils.update_video_vimeo()
         eolvimeo = EolVimeoVideo.objects.get(edx_video_id=self.video["edx_video_id"])
@@ -858,7 +936,7 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
             status = 'vimeo_upload',
             error_description = ''
         )
-        get_data = {'name':self.video['client_video_id'], 'duration':self.video['duration'], 'upload': {'status': 'complete'}, 'files': [{'quality': 'source', 'type': 'source', 'width': 0, 'height': 0, 'link': 'https://player.vimeo.com/external/1122233344', 'created_time': '2021-06-08T14:21:04+00:00', 'fps': 30, 'size': 0, 'md5': None, 'public_name': 'Original', 'size_short': ''}]}
+        get_data = {'name':self.video['client_video_id'], 'status':'available', 'transcode': {'status': 'in_progress'}, 'duration':self.video['duration'], 'upload': {'status': 'complete'}, 'files': [{'quality': 'source', 'type': 'source', 'width': 0, 'height': 0, 'link': 'https://player.vimeo.com/external/1122233344', 'created_time': '2021-06-08T14:21:04+00:00', 'fps': 30, 'size': 0, 'md5': None, 'public_name': 'Original', 'size_short': ''}]}
         get.side_effect = [namedtuple("Request", ["status_code", "json"])(200, lambda:get_data),]
         vimeo_utils.update_video_vimeo()
         eolvimeo = EolVimeoVideo.objects.get(edx_video_id=self.video["edx_video_id"])
@@ -866,6 +944,34 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
         self.assertEqual(video['status'], 'vimeo_encoding')
         self.assertEqual(eolvimeo.status, 'vimeo_encoding')
         self.assertEqual(eolvimeo.error_description, 'Vimeo todavia esta procesando el video.')
+
+    @patch('requests.get')
+    @patch("eol_vimeo.vimeo_utils.get_storage")
+    @override_settings(EOL_VIMEO_CLIENT_ID='1234567890asdfgh')
+    @override_settings(EOL_VIMEO_CLIENT_SECRET='1234567890asdfgh')
+    @override_settings(EOL_VIMEO_CLIENT_TOKEN='1234567890asdfgh')
+    def test_update_video_vimeo_vimeo_uploading(self, get_storage, get):
+        """
+            Test update_video_vimeo when video is still uploading in vimeo
+        """
+        get_storage.configure_mock(open=Mock(), delete=Mock())
+        EolVimeoVideo.objects.create(
+            edx_video_id = self.video["edx_video_id"],
+            user =self.user,
+            vimeo_video_id = '1122334455',
+            course_key = self.course.id,
+            url_vimeo = '',
+            status = 'vimeo_upload',
+            error_description = ''
+        )
+        get_data = {'name':self.video['client_video_id'], 'status':'available', 'transcode': {'status': 'in_progress'}, 'duration':self.video['duration'], 'upload': {'status': 'in_progress'}, 'files': [{'quality': 'source', 'type': 'source', 'width': 0, 'height': 0, 'link': 'https://player.vimeo.com/external/1122233344', 'created_time': '2021-06-08T14:21:04+00:00', 'fps': 30, 'size': 0, 'md5': None, 'public_name': 'Original', 'size_short': ''}]}
+        get.side_effect = [namedtuple("Request", ["status_code", "json"])(200, lambda:get_data),]
+        vimeo_utils.update_video_vimeo()
+        eolvimeo = EolVimeoVideo.objects.get(edx_video_id=self.video["edx_video_id"])
+        video = get_video_info(self.video["edx_video_id"])
+        self.assertEqual(video['status'], 'vimeo_upload')
+        self.assertEqual(eolvimeo.status, 'vimeo_upload')
+        self.assertEqual(eolvimeo.error_description, 'Vimeo todavia esta subiendo el video. ')
 
     @patch('requests.get')
     @patch("eol_vimeo.vimeo_utils.update_video")
@@ -886,7 +992,7 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
             status = 'vimeo_upload',
             error_description = ''
         )
-        get_data = {'name':self.video['client_video_id'], 'duration':self.video['duration'], 'upload': {'status': 'complete'}, 'files': [{'quality': 'source', 'type': 'source', 'width': 0, 'height': 0, 'link': 'https://player.vimeo.com/external/1122233344', 'created_time': '2021-06-08T14:21:04+00:00', 'fps': 30, 'size': 0, 'md5': None, 'public_name': 'Original', 'size_short': ''}]}
+        get_data = {'name':self.video['client_video_id'], 'status':'available', 'transcode': {'status': 'complete'}, 'duration':self.video['duration'], 'upload': {'status': 'complete'}, 'files': [{'quality': 'source', 'type': 'source', 'width': 0, 'height': 0, 'link': 'https://player.vimeo.com/external/1122233344', 'created_time': '2021-06-08T14:21:04+00:00', 'fps': 30, 'size': 0, 'md5': None, 'public_name': 'Original', 'size_short': ''}]}
         get.side_effect = [namedtuple("Request", ["status_code", "json"])(200, lambda:get_data),]
         vimeo_utils.update_video_vimeo()
         eolvimeo = EolVimeoVideo.objects.get(edx_video_id=self.video["edx_video_id"])
