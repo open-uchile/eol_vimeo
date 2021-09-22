@@ -31,6 +31,7 @@ from django.core.files.storage import get_storage_class
 from .models import EolVimeoVideo
 from cms.djangoapps.contentstore.views import videos
 from edxval.api import update_video_status
+from django.utils import timezone
 import datetime
 
 logger = logging.getLogger(__name__)
@@ -400,14 +401,23 @@ def update_video_vimeo(course_id=None):
                         update_video_status(video.edx_video_id, 'vimeo_encoding')
                     else:
                         quality_video = get_link_video(video_data)
-                        video_name = '{} {}'.format(video_data['name'], quality_video['public_name'])
+                        video_name = video_data['name']
                         if quality_video['public_name'] == 'Original':
                             logger.info('EolVimeo - Video is still processing, edx_video_id: {}'.format(video.edx_video_id))
                             error_description = 'Vimeo todavia esta procesando el video.'
                             status_video = 'vimeo_encoding'
                         else:
-                            status_video = 'upload_completed'
-                            error_description = 'upload_completed'
+                            if quality_video['public_name'] == "HD 720p":
+                                status_video = 'upload_completed'
+                                error_description = 'upload_completed'
+                            else:
+                                now = timezone.now()
+                                if now > (video.expiry_at + datetime.timedelta(hours=24)):
+                                    status_video = 'upload_completed'
+                                    error_description = 'upload_completed, Lleva mas de 24 hrs procesesando o video no tiene resolucion HD 720p'
+                                else:
+                                    status_video = 'vimeo_encoding'
+                                    error_description = 'Vimeo todavia puede estar procesando el video en HD.'
                         video.url_vimeo = quality_video['link']
                         video.status = status_video
                         video.error_description = error_description
