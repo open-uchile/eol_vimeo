@@ -358,10 +358,10 @@ def update_video_vimeo(course_id=None):
     """
     if check_credentials():
         if course_id is None:
-            videos = EolVimeoVideo.objects.filter(status__in=['vimeo_encoding', 'vimeo_upload'])
+            videos = EolVimeoVideo.objects.filter(status__in=['vimeo_encoding', 'vimeo_upload', 'upload_completed_encoding'])
         else:
             course_key = CourseKey.from_string(course_id)
-            videos = EolVimeoVideo.objects.filter(course_key=course_key, status__in=['vimeo_encoding', 'vimeo_upload'])
+            videos = EolVimeoVideo.objects.filter(course_key=course_key, status__in=['vimeo_encoding', 'vimeo_upload', 'upload_completed_encoding'])
         for video in videos:
             video_data = get_video_vimeo(video.vimeo_video_id)
             if len(video_data) == 0:
@@ -412,9 +412,13 @@ def update_video_vimeo(course_id=None):
                                 error_description = 'upload_completed'
                             else:
                                 now = timezone.now()
-                                if now > (video.expiry_at + datetime.timedelta(hours=24)):
-                                    status_video = 'upload_completed'
-                                    error_description = 'upload_completed, Lleva mas de 24 hrs procesesando o video no tiene resolucion HD 720p'
+                                if now > (video.expiry_at + datetime.timedelta(hours=2)):
+                                    if now > (video.expiry_at + datetime.timedelta(hours=24)):
+                                        status_video = 'upload_completed'
+                                        error_description = 'upload_completed, Lleva mas de 24 hrs procesesando o video no tiene resolucion HD 720p'
+                                    else:
+                                        status_video = 'upload_completed_encoding'
+                                        error_description = 'upload_completed_encoding, Lleva mas de 2 hrs procesesando o video no tiene resolucion HD 720p'
                                 else:
                                     status_video = 'vimeo_encoding'
                                     error_description = 'Vimeo todavia puede estar procesando el video en HD.'
