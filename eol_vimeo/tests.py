@@ -1004,7 +1004,7 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
         video = get_video_info(self.video["edx_video_id"])
         self.assertEqual(video['status'], 'upload_completed')
         self.assertEqual(eolvimeo.status, 'upload_completed')
-        self.assertEqual(eolvimeo.error_description, 'upload_completed, Lleva mas de 24 hrs procesesando o video no tiene resolucion HD 720p')
+        self.assertEqual(eolvimeo.error_description, 'upload_completed, Lleva mas de 24 hrs procesando o video no tiene resolucion HD 720p')
 
     @patch('requests.get')
     @patch("eol_vimeo.vimeo_utils.get_storage")
@@ -1033,7 +1033,7 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
         video = get_video_info(self.video["edx_video_id"])
         self.assertEqual(video['status'], 'upload_completed_encoding')
         self.assertEqual(eolvimeo.status, 'upload_completed_encoding')
-        self.assertEqual(eolvimeo.error_description, 'upload_completed_encoding, Lleva mas de 2 hrs procesesando o video no tiene resolucion HD 720p')
+        self.assertEqual(eolvimeo.error_description, 'upload_completed_encoding, Lleva mas de 2 hrs procesando o video no tiene resolucion HD 720p')
 
     @patch('requests.get')
     @patch("eol_vimeo.vimeo_utils.get_storage")
