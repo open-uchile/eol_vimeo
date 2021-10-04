@@ -36,7 +36,7 @@ def vimeo_callback(request):
         return HttpResponse(status=400)
     edx_video_id = request.GET.get('videoid', '')
     token = request.GET.get('token', '')
-    if not EolVimeoVideo.objects.filter(edx_video_id=edx_video_id, status__in=['vimeo_encoding', 'vimeo_upload'], token=token).exists():
+    if not EolVimeoVideo.objects.filter(edx_video_id=edx_video_id, status__in=['vimeo_encoding', 'vimeo_upload', 'upload_completed_encoding'], token=token).exists():
         logger.error("EolVimeo - Video id have problem, check model, edx_video_id: {}, token: {}".format(edx_video_id, token))
         return HttpResponse(status=400)
     video_vimeo = EolVimeoVideo.objects.get(edx_video_id=edx_video_id, token=token)
