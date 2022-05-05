@@ -247,20 +247,20 @@ def upload(id_file, domain, course_id):
 def get_link_video(video_data):
     """
         video_data['files'] has different links depending on the video quality (resolution and fps)
-        this function return 720p30fps or 720p60fps or best quality link
+        this function return hls quality because is the only with static url
     """
-    video30 = {}
-    video60 = {}
+    video = {}
+    original = {}
     for video in video_data['files']:
-        if video['quality'] == 'hd' and video['height'] == 720 and video['fps'] < 32:
-            video30 = video
-        if video['quality'] == 'hd' and video['height'] == 720 and video['fps'] > 32:
-            video60 = video
-    if video30 or video60:
-        return video30 or video60
-    else:
-        #if not found 720p video return best quality link
-        return get_link_video_best_quality(video_data)
+        if video['quality'] == 'hls':
+            video = video
+        if video['quality'] == 'source':
+            original = video
+    if video:
+        return video
+    if original:
+        return original
+    return None
 
 def get_link_video_best_quality(video_data):
     """
@@ -401,42 +401,55 @@ def update_video_vimeo(course_id=None):
                         update_video_status(video.edx_video_id, 'vimeo_encoding')
                     else:
                         quality_video = get_link_video(video_data)
+                        now = timezone.now()
                         video_name = video_data['name'].rstrip('.mp4')
                         video_name = video_name.rstrip('.mov')
-                        if quality_video['public_name'] == 'Original':
-                            logger.info('EolVimeo - Video is still processing, edx_video_id: {}'.format(video.edx_video_id))
-                            error_description = 'Vimeo todavia esta procesando el video.'
-                            status_video = 'vimeo_encoding'
-                        else:
-                            if quality_video['public_name'] == "HD 720p":
+                        if quality_video is not None:
+                            if quality_video['quality'] == 'hls':
                                 status_video = 'upload_completed'
                                 error_description = 'upload_completed'
                             else:
                                 now = timezone.now()
                                 if now > (video.expiry_at + datetime.timedelta(hours=2)):
                                     if now > (video.expiry_at + datetime.timedelta(hours=24)):
-                                        status_video = 'upload_completed'
-                                        error_description = 'upload_completed, Lleva mas de 24 hrs procesando o video no tiene resolucion HD 720p'
+                                        status_video = 'upload_failed'
+                                        error_description = 'upload_failed, Lleva mas de 24 hrs procesando o video no tiene formato HLS'
                                     else:
                                         status_video = 'upload_completed_encoding'
-                                        error_description = 'upload_completed_encoding, Lleva mas de 2 hrs procesando o video no tiene resolucion HD 720p'
+                                        error_description = 'upload_completed_encoding, Lleva mas de 2 hrs procesando.'
                                 else:
                                     status_video = 'vimeo_encoding'
-                                    error_description = 'Vimeo todavia puede estar procesando el video en HD.'
-                        video.url_vimeo = quality_video['link']
-                        video.status = status_video
-                        video.error_description = error_description
-                        video.save()
-                        is_updated = update_edxval_url(video.edx_video_id, quality_video['link'], quality_video['size'], video_name, video_data['duration'], status_video)
-                        if is_updated:
-                            logger.info('EolVimeo - Video upload completed, edx_video_id: {}'.format(video.edx_video_id))
-                            get_storage().delete(video.edx_video_id)
-                        else:
-                            logger.info('EolVimeo - error update_video in edxval.api, edx_video_id: {}'.format(video.edx_video_id))
-                            video.error_description = 'No se pudo agregar el path vimeo del video al video en plataforma(error update_video in edxval.api). '
-                            video.status = 'vimeo_patch_failed'
+                                    error_description = 'Vimeo todavia puede estar procesando el video.'
+                            video.url_vimeo = quality_video['link']
+                            video.status = status_video
+                            video.error_description = error_description
                             video.save()
-                            update_video_status(video.edx_video_id, 'vimeo_patch_failed')
+                            is_updated = update_edxval_url(video.edx_video_id, quality_video['link'], quality_video['size'], video_name, video_data['duration'], status_video)
+                            if is_updated:
+                                logger.info('EolVimeo - Video updated completed, edx_video_id: {}'.format(video.edx_video_id))
+                                get_storage().delete(video.edx_video_id)
+                            else:
+                                logger.info('EolVimeo - error update_video in edxval.api, edx_video_id: {}'.format(video.edx_video_id))
+                                video.error_description = 'No se pudo agregar el path vimeo del video al video en plataforma(error update_video in edxval.api). '
+                                video.status = 'vimeo_patch_failed'
+                                video.save()
+                                update_video_status(video.edx_video_id, 'vimeo_patch_failed')
+                        else:
+                            if now > (video.expiry_at + datetime.timedelta(hours=2)):
+                                if now > (video.expiry_at + datetime.timedelta(hours=24)):
+                                    logger.info('EolVimeo - Error vimeo upload, dont have HLS format, edx_video_id: {}'.format(video.edx_video_id))
+                                    status_video = 'upload_failed'
+                                    error_description = 'upload_failed, Lleva mas de 24 hrs procesando o video no tiene formato HLS'
+                                else:
+                                    status_video = 'vimeo_encoding'
+                                    error_description = 'vimeo_encoding, Lleva mas de 2 hrs procesando.'
+                            else:
+                                status_video = 'vimeo_encoding'
+                                error_description = 'Vimeo todavia puede estar procesando el video.'
+                            video.status = status_video
+                            video.error_description = error_description
+                            video.save()
+                            update_video_status(video.edx_video_id, status_video)
                 else:
                     logger.info('EolVimeo - video was not uploaded correctly, edx_video_id: {}, id_vimeo: {}'.format(video.edx_video_id, video.vimeo_video_id))
                     video.status = 'upload_failed'
