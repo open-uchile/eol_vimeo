@@ -82,6 +82,7 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
     @override_settings(EOL_VIMEO_CLIENT_SECRET='1234567890asdfgh')
     @override_settings(EOL_VIMEO_CLIENT_TOKEN='1234567890asdfgh')
     @override_settings(EOL_VIMEO_DOMAINS=['test.cl', 'studio.test.cl'])
+    @override_settings(EOL_VIMEO_MAIN_FOLDER='12345')
     def test_upload_video_to_vimeo(self, get_storage, get, post, put):
         """
             Test upload video to vimeo normal process
@@ -96,13 +97,12 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
             error_description = ''
         )
         get_storage.configure_mock(open=Mock(), delete=Mock())
-        get_data = {'page': 1, 'total': 1, 'data': [{'uri':'/users/112233/projects/12345','name':'test'}]}
         get_data2 = {'name':self.video['client_video_id'], 'status':'available', 'transcode': {'status': 'in_progress'},'duration':self.video['duration'], 'upload': {'status': 'in_progress'}, 'files': [{'quality': 'source', 'type': 'source', 'width': 0, 'height': 0, 'link': 'https://player.vimeo.com/external/1122233344', 'created_time': '2021-06-08T14:21:04+00:00', 'fps': 30, 'size': 0, 'md5': None, 'public_name': 'Original', 'size_short': ''}]}
         post_data = {'upload': {'status': 'in_progress'}, 'uri': '/videos/123456789'}
         post_data2 = {'uri': '/users/112233/projects/995577'}
 
         put.side_effect = [namedtuple("Request", ["status_code"])(204),namedtuple("Request", ["status_code"])(204),namedtuple("Request", ["status_code"])(204),]
-        get.side_effect = [namedtuple("Request", ["status_code", "json"])(200, lambda:get_data), namedtuple("Request", ["status_code", "json"])(200, lambda:get_data2),]
+        get.side_effect = [namedtuple("Request", ["status_code", "json"])(200, lambda:get_data2),]
         post.side_effect = [namedtuple("Request", ["status_code", "text"])(201, json.dumps(post_data)), namedtuple("Request", ["status_code", "json"])(201, lambda:post_data2),]
 
         data = [{'edxVideoId': self.video['edx_video_id'], 'status':'upload_completed', 'message': ''}]
@@ -118,6 +118,7 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
     @override_settings(EOL_VIMEO_CLIENT_SECRET='1234567890asdfgh')
     @override_settings(EOL_VIMEO_CLIENT_TOKEN='1234567890asdfgh')
     @override_settings(EOL_VIMEO_DOMAINS=['test.cl', 'studio.test.cl'])
+    @override_settings(EOL_VIMEO_MAIN_FOLDER='12345')
     def test_upload_video_to_vimeo_multiple_video(self, get_storage, get, post, put):
         """
             Test upload video to vimeo normal process with multiple videos
@@ -141,15 +142,12 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
             error_description = ''
         )
         get_storage.configure_mock(open=Mock(), delete=Mock())
-        
-        get_data = {'page': 1, 'total': 1, 'data': [{'uri':'/users/112233/projects/12345','name':'Studio Eol'}]}
         get_data2 = {'name':self.video['client_video_id'], 'status':'available', 'transcode': {'status': 'in_progress'}, 'duration':self.video['duration'], 'upload': {'status': 'in_progress'}, 'files': [{'quality': 'source', 'type': 'source', 'width': 0, 'height': 0, 'link': 'https://player.vimeo.com/external/1122233344', 'created_time': '2021-06-08T14:21:04+00:00', 'fps': 30, 'size': 0, 'md5': None, 'public_name': 'Original', 'size_short': ''}]}
         post_data = {'upload': {'status': 'in_progress'}, 'uri': '/videos/123456789'}
 
         put.side_effect = [namedtuple("Request", ["status_code"])(204),namedtuple("Request", ["status_code"])(204),namedtuple("Request", ["status_code"])(204),
                         namedtuple("Request", ["status_code"])(204),namedtuple("Request", ["status_code"])(204),namedtuple("Request", ["status_code"])(204),]
-        get.side_effect = [namedtuple("Request", ["status_code", "json"])(200, lambda:get_data), namedtuple("Request", ["status_code", "json"])(200, lambda:get_data2),
-                        namedtuple("Request", ["status_code", "json"])(200, lambda:get_data), namedtuple("Request", ["status_code", "json"])(200, lambda:get_data2),]
+        get.side_effect = [namedtuple("Request", ["status_code", "json"])(200, lambda:get_data2), namedtuple("Request", ["status_code", "json"])(200, lambda:get_data2),]
         post.side_effect = [namedtuple("Request", ["status_code", "text"])(201, json.dumps(post_data)), namedtuple("Request", ["status_code", "text"])(201, json.dumps(post_data)),]
         data = [{'edxVideoId': self.video['edx_video_id'], 'status':'upload_completed', 'message': ''},
                 {'edxVideoId': '123', 'status':'upload', 'message': ''},
@@ -172,6 +170,7 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
     @override_settings(EOL_VIMEO_CLIENT_SECRET='1234567890asdfgh')
     @override_settings(EOL_VIMEO_CLIENT_TOKEN='1234567890asdfgh')
     @override_settings(EOL_VIMEO_DOMAINS=['test.cl', 'studio.test.cl'])
+    @override_settings(EOL_VIMEO_MAIN_FOLDER='12345')
     def test_upload_video_to_vimeo_folder_exists(self, get_storage, get, post, put):
         """
             Test upload video to vimeo normal process when folders in vimeo exists
@@ -186,11 +185,10 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
             error_description = ''
         )
         get_storage.configure_mock(open=Mock(), delete=Mock())
-        get_data = {'page': 1, 'total': 1, 'data': [{'uri':'/users/112233/projects/12345','name':'Studio Eol'}]}
         get_data2 = {'name':self.video['client_video_id'], 'status':'available', 'transcode': {'status': 'in_progress'}, 'duration':self.video['duration'], 'upload': {'status': 'in_progress'}, 'files': [{'quality': 'source', 'type': 'source', 'width': 0, 'height': 0, 'link': 'https://player.vimeo.com/external/1122233344', 'created_time': '2021-06-08T14:21:04+00:00', 'fps': 30, 'size': 0, 'md5': None, 'public_name': 'Original', 'size_short': ''}]}
         post_data = {'upload': {'status': 'in_progress'}, 'uri': '/videos/123456789'}
         put.side_effect = [namedtuple("Request", ["status_code"])(204),namedtuple("Request", ["status_code"])(204),namedtuple("Request", ["status_code"])(204),]
-        get.side_effect = [namedtuple("Request", ["status_code", "json"])(200, lambda:get_data), namedtuple("Request", ["status_code", "json"])(200, lambda:get_data2),]
+        get.side_effect = [namedtuple("Request", ["status_code", "json"])(200, lambda:get_data2),]
         post.side_effect = [namedtuple("Request", ["status_code", "text"])(201, json.dumps(post_data)),]
 
         data = [{'edxVideoId': self.video['edx_video_id'], 'status':'upload_completed', 'message': ''}]
@@ -206,6 +204,7 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
     @override_settings(EOL_VIMEO_CLIENT_SECRET='1234567890asdfgh')
     @override_settings(EOL_VIMEO_CLIENT_TOKEN='1234567890asdfgh')
     @override_settings(EOL_VIMEO_DOMAINS=['test.cl', 'studio.test.cl'])
+    @override_settings(EOL_VIMEO_MAIN_FOLDER='12345')
     def test_upload_video_to_vimeo_fail_get_video(self, get_storage, get, post, put):
         """
             Test upload video to vimeo when fail to get video in vimeo
@@ -220,13 +219,12 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
             error_description = ''
         )
         get_storage.configure_mock(open=Mock(), delete=Mock())
-        get_data = {'page': 1, 'total': 1, 'data': [{'uri':'/users/112233/projects/12345','name':'test'}]}
         get_data2 = {'error': "The requested video couldn't be found."}
         post_data = {'upload': {'status': 'in_progress'}, 'uri': '/videos/123456789'}
         post_data2 = {'uri': '/users/112233/projects/995577'}
 
         put.side_effect = [namedtuple("Request", ["status_code"])(204),namedtuple("Request", ["status_code"])(204),namedtuple("Request", ["status_code"])(204),]
-        get.side_effect = [namedtuple("Request", ["status_code", "json"])(200, lambda:get_data), namedtuple("Request", ["status_code", "json"])(404, lambda:get_data2),]
+        get.side_effect = [namedtuple("Request", ["status_code", "json"])(404, lambda:get_data2),]
         post.side_effect = [namedtuple("Request", ["status_code", "text"])(201, json.dumps(post_data)), namedtuple("Request", ["status_code", "json"])(201, lambda:post_data2),]
 
         data = [{'edxVideoId': self.video['edx_video_id'], 'status':'upload_completed', 'message': ''}]
@@ -242,77 +240,7 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
     @override_settings(EOL_VIMEO_CLIENT_SECRET='1234567890asdfgh')
     @override_settings(EOL_VIMEO_CLIENT_TOKEN='1234567890asdfgh')
     @override_settings(EOL_VIMEO_DOMAINS=['test.cl', 'studio.test.cl'])
-    def test_upload_video_to_vimeo_fail_move_to_folder_get_folders(self, get_storage, get, post, put):
-        """
-            Test upload video to vimeo when fail get folders in vimeo
-        """
-        EolVimeoVideo.objects.create(
-            edx_video_id = self.video["edx_video_id"],
-            user =self.user,
-            vimeo_video_id = '1122334455',
-            course_key = self.course.id,
-            url_vimeo = '',
-            status = 'vimeo_encoding',
-            error_description = ''
-        )
-        get_storage.configure_mock(open=Mock(), delete=Mock())
-        get_data = {'error': 'Something strange occurred. Please contact the app owners.', 'link': None, 'developer_message': 'The credentials provided are invalid.', 'error_code': 8000}
-        get_data2 = {'name':self.video['client_video_id'], 'status':'available', 'transcode': {'status': 'in_progress'}, 'duration':self.video['duration'], 'upload': {'status': 'in_progress'}, 'files': [{'quality': 'source', 'type': 'source', 'width': 0, 'height': 0, 'link': 'https://player.vimeo.com/external/1122233344', 'created_time': '2021-06-08T14:21:04+00:00', 'fps': 30, 'size': 0, 'md5': None, 'public_name': 'Original', 'size_short': ''}]}
-        post_data = {'upload': {'status': 'in_progress'}, 'uri': '/videos/123456789'}
-
-        put.side_effect = [namedtuple("Request", ["status_code"])(204),namedtuple("Request", ["status_code"])(204),]
-        get.side_effect = [namedtuple("Request", ["status_code", "json"])(401, lambda:get_data), namedtuple("Request", ["status_code", "json"])(200, lambda:get_data2),]
-        post.side_effect = [namedtuple("Request", ["status_code", "text"])(201, json.dumps(post_data)), ]
-
-        data = [{'edxVideoId': self.video['edx_video_id'], 'status':'upload_completed', 'message': ''}]
-        response = vimeo_task.upload_vimeo(data, settings.EOL_VIMEO_MAIN_FOLDER, 'https://test.test.ts', self.course.id)
-        data2 = [{'edxVideoId': self.video['edx_video_id'], 'status':'vimeo_upload', 'message': 'No se pudo mover el video a la carpeta principal en Vimeo. ', 'vimeo_id':'123456789'}]
-        self.assertEqual(response, data2)
-
-    @patch('requests.put')
-    @patch('requests.post')
-    @patch('requests.get')
-    @patch("eol_vimeo.vimeo_utils.get_storage")
-    @override_settings(EOL_VIMEO_CLIENT_ID='1234567890asdfgh')
-    @override_settings(EOL_VIMEO_CLIENT_SECRET='1234567890asdfgh')
-    @override_settings(EOL_VIMEO_CLIENT_TOKEN='1234567890asdfgh')
-    @override_settings(EOL_VIMEO_DOMAINS=['test.cl', 'studio.test.cl'])
-    def test_upload_video_to_vimeo_fail_move_to_folder_create_folder(self, get_storage, get, post, put):
-        """
-            Test upload video to vimeo when fail create folder in vimeo
-        """
-        EolVimeoVideo.objects.create(
-            edx_video_id = self.video["edx_video_id"],
-            user =self.user,
-            vimeo_video_id = '1122334455',
-            course_key = self.course.id,
-            url_vimeo = '',
-            status = 'vimeo_encoding',
-            error_description = ''
-        )
-        get_storage.configure_mock(open=Mock(), delete=Mock())
-        get_data = {'page': 1, 'total': 1, 'data': [{'uri':'/users/112233/projects/12345','name':'test'}]}
-        get_data2 = {'name':self.video['client_video_id'], 'status':'available', 'transcode': {'status': 'in_progress'}, 'duration':self.video['duration'], 'upload': {'status': 'in_progress'}, 'files': [{'quality': 'source', 'type': 'source', 'width': 0, 'height': 0, 'link': 'https://player.vimeo.com/external/1122233344', 'created_time': '2021-06-08T14:21:04+00:00', 'fps': 30, 'size': 0, 'md5': None, 'public_name': 'Original', 'size_short': ''}]}
-        post_data = {'upload': {'status': 'in_progress'}, 'uri': '/videos/123456789'}
-        post_data2 = {'error': 'Something strange occurred. Please contact the app owners.', 'link': None, 'developer_message': 'The credentials provided are invalid.', 'error_code': 8000}
-        
-        put.side_effect = [namedtuple("Request", ["status_code"])(204),namedtuple("Request", ["status_code"])(204),]
-        get.side_effect = [namedtuple("Request", ["status_code", "json"])(200, lambda:get_data), namedtuple("Request", ["status_code", "json"])(200, lambda:get_data2),]
-        post.side_effect = [namedtuple("Request", ["status_code", "text"])(201, json.dumps(post_data)), namedtuple("Request", ["status_code", "json"])(401, lambda:post_data2),]
-
-        data = [{'edxVideoId': self.video['edx_video_id'], 'status':'upload_completed', 'message': ''}]
-        response = vimeo_task.upload_vimeo(data, settings.EOL_VIMEO_MAIN_FOLDER, 'https://test.test.ts', self.course.id)
-        data2 = [{'edxVideoId': self.video['edx_video_id'], 'status':'vimeo_upload', 'message': 'No se pudo mover el video a la carpeta principal en Vimeo. ', 'vimeo_id':'123456789'}]
-        self.assertEqual(response, data2)
-
-    @patch('requests.put')
-    @patch('requests.post')
-    @patch('requests.get')
-    @patch("eol_vimeo.vimeo_utils.get_storage")
-    @override_settings(EOL_VIMEO_CLIENT_ID='1234567890asdfgh')
-    @override_settings(EOL_VIMEO_CLIENT_SECRET='1234567890asdfgh')
-    @override_settings(EOL_VIMEO_CLIENT_TOKEN='1234567890asdfgh')
-    @override_settings(EOL_VIMEO_DOMAINS=['test.cl', 'studio.test.cl'])
+    @override_settings(EOL_VIMEO_MAIN_FOLDER='12345')
     def test_upload_video_to_vimeo_fail_move_to_folder_move_video(self, get_storage, get, post, put):
         """
             Test upload video to vimeo when fail move video to folder in vimeo
@@ -327,13 +255,12 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
             error_description = ''
         )
         get_storage.configure_mock(open=Mock(), delete=Mock())
-        get_data = {'page': 1, 'total': 1, 'data': [{'uri':'/users/112233/projects/12345','name':'test'}]}
         get_data2 = {'name':self.video['client_video_id'], 'status':'available', 'transcode': {'status': 'in_progress'}, 'duration':self.video['duration'], 'upload': {'status': 'in_progress'}, 'files': [{'quality': 'source', 'type': 'source', 'width': 0, 'height': 0, 'link': 'https://player.vimeo.com/external/1122233344', 'created_time': '2021-06-08T14:21:04+00:00', 'fps': 30, 'size': 0, 'md5': None, 'public_name': 'Original', 'size_short': ''}]}
         post_data = {'upload': {'status': 'in_progress'}, 'uri': '/videos/123456789'}
         post_data2 = {'uri': '/users/112233/projects/995577'}
         put_data = {'error': 'Your access token does not have the "interact" scope'}
         put.side_effect = [namedtuple("Request", ["status_code"])(204),namedtuple("Request", ["status_code"])(204),namedtuple("Request", ["status_code", "json"])(403, lambda:put_data),]
-        get.side_effect = [namedtuple("Request", ["status_code", "json"])(200, lambda:get_data), namedtuple("Request", ["status_code", "json"])(200, lambda:get_data2),]
+        get.side_effect = [namedtuple("Request", ["status_code", "json"])(200, lambda:get_data2),]
         post.side_effect = [namedtuple("Request", ["status_code", "text"])(201, json.dumps(post_data)), namedtuple("Request", ["status_code", "json"])(201, lambda:post_data2),]
 
         data = [{'edxVideoId': self.video['edx_video_id'], 'status':'upload_completed', 'message': ''}]
@@ -349,6 +276,7 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
     @override_settings(EOL_VIMEO_CLIENT_SECRET='1234567890asdfgh')
     @override_settings(EOL_VIMEO_CLIENT_TOKEN='1234567890asdfgh')
     @override_settings(EOL_VIMEO_DOMAINS=['test.cl', 'studio.test.cl'])
+    @override_settings(EOL_VIMEO_MAIN_FOLDER='12345')
     def test_upload_video_to_vimeo_fail_add_domain(self, get_storage, get, post, put):
         """
             Test upload video to vimeo when fail add domain to video in vimeo
@@ -363,13 +291,12 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
             error_description = ''
         )
         get_storage.configure_mock(open=Mock(), delete=Mock())
-        get_data = {'page': 1, 'total': 1, 'data': [{'uri':'/users/112233/projects/12345','name':'test'}]}
         get_data2 = {'name':self.video['client_video_id'], 'status':'available', 'transcode': {'status': 'in_progress'}, 'duration':self.video['duration'], 'upload': {'status': 'in_progress'}, 'files': [{'quality': 'source', 'type': 'source', 'width': 0, 'height': 0, 'link': 'https://player.vimeo.com/external/1122233344', 'created_time': '2021-06-08T14:21:04+00:00', 'fps': 30, 'size': 0, 'md5': None, 'public_name': 'Original', 'size_short': ''}]}
         post_data = {'upload': {'status': 'in_progress'}, 'uri': '/videos/123456789'}
         post_data2 = {'uri': '/users/112233/projects/995577'}
         put_data = {'error': 'Something strange occurred. Please contact the app owners.', 'link': None, 'developer_message': 'The credentials provided are invalid.', 'error_code': 8000}
         put.side_effect = [namedtuple("Request", ["status_code", "json"])(403, lambda:put_data),namedtuple("Request", ["status_code", "json"])(403, lambda:put_data),namedtuple("Request", ["status_code"])(204),]
-        get.side_effect = [namedtuple("Request", ["status_code", "json"])(200, lambda:get_data), namedtuple("Request", ["status_code", "json"])(200, lambda:get_data2),]
+        get.side_effect = [namedtuple("Request", ["status_code", "json"])(200, lambda:get_data2),]
         post.side_effect = [namedtuple("Request", ["status_code", "text"])(201, json.dumps(post_data)), namedtuple("Request", ["status_code", "json"])(201, lambda:post_data2),]
         
         data = [{'edxVideoId': self.video['edx_video_id'], 'status':'upload_completed', 'message': ''}]
