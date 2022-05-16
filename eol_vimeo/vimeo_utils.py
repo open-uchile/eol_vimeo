@@ -204,14 +204,15 @@ def upload(id_file, domain, course_id):
             "Content-Type": "application/json",
             "Accept": 'application/vnd.vimeo.*+json;version=3.4'
         }
-
+        video_name = video.client_video_id.rstrip('.mp4')
+        video_name = video_name.rstrip('.mov')
         url = "https://api.vimeo.com/me/videos"
         body = {
             "upload": {
                 "approach": "pull",
                 "link": urllib.parse.quote(upload_url, safe='~@#$&()*!+=:;,.?/\'')
             },
-            'name': video.client_video_id,
+            'name': '{}_{}'.format(str(course_id), video_name),
             'description': "",
             'privacy': {
                 'embed': "whitelist",
