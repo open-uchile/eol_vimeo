@@ -120,25 +120,16 @@ def get_video_vimeo(id_video):
         logger.exception('EolVimeo - Exception: %s' % str(e))
         return {}
 
-def move_to_folder(id_video, name_folder):
+def move_to_folder(id_video, id_folder):
     """
-        Check if main folder exists in vimeo to move the video there, if not exists, create the folder
-        Only check first 100 folders in ascending order
+        Check if main folder exists in vimeo to move the video there
     """
+    if id_folder is None:
+        logger.info('EolVimeo - Error to move video, id_folder is None, id_video: {}'.format(id_video))
+        return False
     client = get_client_vimeo()
     if client is None:
         return False
-    next_response = True
-    uri_folder = ''
-    uri_folder, next_response = get_folders(1, client, name_folder)
-    if uri_folder == 'Error':
-        return False
-    if uri_folder == '':
-        logger.info('EolVimeo - Vimeo folder not found')
-        uri_folder = create_folder(client, name_folder)
-        if uri_folder == 'Error':
-            return False
-    id_folder = uri_folder.split('/')[-1]
     return move_video(client, id_folder, id_video)
     
 def move_video(client, id_folder, id_video):
@@ -156,13 +147,13 @@ def move_video(client, id_folder, id_video):
         logger.exception('EolVimeo - Exception: %s' % str(e))
         return False
 
-def create_folder(client, name_folder):
+def create_folder(client, id_folder):
     """
         Create folder in vimeo.
         return folder uri
     """
     try:
-        response_folder = client.post('/me/projects', data={"name": name_folder})
+        response_folder = client.post('/me/projects', data={"name": id_folder})
         if response_folder.status_code == 201:
             data_folder = response_folder.json()
             return data_folder['uri']
@@ -213,14 +204,15 @@ def upload(id_file, domain, course_id):
             "Content-Type": "application/json",
             "Accept": 'application/vnd.vimeo.*+json;version=3.4'
         }
-
+        video_name = video.client_video_id.rstrip('.mp4')
+        video_name = video_name.rstrip('.mov')
         url = "https://api.vimeo.com/me/videos"
         body = {
             "upload": {
                 "approach": "pull",
                 "link": urllib.parse.quote(upload_url, safe='~@#$&()*!+=:;,.?/\'')
             },
-            'name': video.client_video_id,
+            'name': '{}_{}'.format(str(course_id), video_name),
             'description': "",
             'privacy': {
                 'embed': "whitelist",
@@ -402,8 +394,7 @@ def update_video_vimeo(course_id=None):
                     else:
                         quality_video = get_link_video(video_data)
                         now = timezone.now()
-                        video_name = video_data['name'].rstrip('.mp4')
-                        video_name = video_name.rstrip('.mov')
+                        video_name = video_data['name'].lstrip('{}_'.format(str(video.course_key)))
                         if quality_video is not None:
                             if quality_video['quality'] == 'hls':
                                 status_video = 'upload_completed'
