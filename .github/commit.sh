@@ -6,7 +6,7 @@ prepare_commit() {
   git add coverage-badge.svg
   git commit -m "Update coverage badge" 2> /dev/null
   if [ $? -eq 0 ]; then
-    git push https://eolito:${{ secrets.GITHUB_TOKEN }}@github.com/eol-uchile/eol_vimeo.git HEAD:master;
+    git push https://eolito:$1@github.com/eol-uchile/eol_vimeo.git HEAD:master;
   else
     echo "Skipped";
   fi
