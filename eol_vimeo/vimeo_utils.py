@@ -394,8 +394,7 @@ def update_video_vimeo(course_id=None):
                     else:
                         quality_video = get_link_video(video_data)
                         now = timezone.now()
-                        video_name = video_data['name'].rstrip('.mp4')
-                        video_name = video_name.rstrip('.mov')
+                        video_name = video_data['name'].lstrip('{}_'.format(str(video.course_key)))
                         if quality_video is not None:
                             if quality_video['quality'] == 'hls':
                                 status_video = 'upload_completed'
