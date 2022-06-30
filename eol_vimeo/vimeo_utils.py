@@ -488,7 +488,7 @@ def update_video_vimeo(course_id=None):
                             is_updated = update_edxval_url(video.edx_video_id, quality_video['link'], quality_video['size'], video_name, video_data['duration'], status_video)
                             if is_updated:
                                 logger.info('EolVimeo - Video updated completed, edx_video_id: {}'.format(video.edx_video_id))
-                                #get_storage().delete(video.edx_video_id)
+                                get_storage().delete(video.edx_video_id)
                             else:
                                 logger.info('EolVimeo - error update_video in edxval.api, edx_video_id: {}'.format(video.edx_video_id))
                                 video.error_description = 'No se pudo agregar el path vimeo del video al video en plataforma(error update_video in edxval.api). '
