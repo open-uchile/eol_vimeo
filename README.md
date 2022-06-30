@@ -7,9 +7,10 @@ Upload videos to Vimeo
 # Install App
 
     docker-compose exec cms pip install -e /openedx/requirements/eol_vimeo
+    docker-compose exec lms pip install -e /openedx/requirements/eol_vimeo
     docker-compose exec cms_worker pip install -e /openedx/requirements/eol_vimeo
-    docker-compose exec cms python manage.py cms --settings=prod.production makemigrations
-    docker-compose exec cms python manage.py cms --settings=prod.production migrate
+    docker-compose exec cms python manage.py cms --settings=prod.production makemigrations eol_vimeo
+    docker-compose exec cms python manage.py cms --settings=prod.production migrate eol_vimeo
 
 # Configuration Vimeo
 

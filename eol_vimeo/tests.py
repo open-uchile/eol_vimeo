@@ -13,6 +13,7 @@ from xmodule.modulestore.django import modulestore
 from xmodule.modulestore.tests.factories import CourseFactory, ItemFactory
 from common.djangoapps.student.roles import CourseInstructorRole, CourseStaffRole
 from common.djangoapps.student.tests.factories import UserFactory, CourseEnrollmentFactory
+from openedx.core.djangoapps.content.course_overviews.models import CourseOverview
 from capa.tests.response_xml_factory import StringResponseXMLFactory
 from lms.djangoapps.courseware.tests.factories import StudentModuleFactory
 from opaque_keys.edx.keys import CourseKey
@@ -1025,6 +1026,7 @@ class TestEolVimeoView(UrlResetMixin, ModuleStoreTestCase):
         # create a course
         self.course = CourseFactory.create(
             org='mss', course='999', display_name='eol_test_course')
+        aux = CourseOverview.get_from_id(self.course.id)
         self.video = {
             "edx_video_id": "123-456-789",
             "client_video_id": "test.mp4",
@@ -1043,10 +1045,22 @@ class TestEolVimeoView(UrlResetMixin, ModuleStoreTestCase):
             "created": datetime.datetime.now(pytz.utc),
             "encoded_videos": [],
         }
+        self.video3 = {
+            "edx_video_id": "345-2323-123",
+            "client_video_id": "test3.mp4",
+            "duration": 10,
+            "status": 'upload_completed',
+            "courses":  [text_type(self.course.id)],
+            "created": datetime.datetime.now(pytz.utc),
+            "encoded_videos": [],
+        }
         create_profile("desktop_mp4")
         create_video(self.video)
         create_video(self.video2)
+        create_video(self.video3)
         self.client = Client()
+        self.client2 = Client()
+        self.client3 = Client()
         with patch('common.djangoapps.student.models.cc.User.save'):
             # staff user
             self.user = UserFactory(
@@ -1054,6 +1068,19 @@ class TestEolVimeoView(UrlResetMixin, ModuleStoreTestCase):
                 password='12345',
                 email='student2@edx.org',
                 is_staff=True)
+            self.client.login(username='testuser2', password='12345')
+            self.instructor = UserFactory(
+                username='testinstructor',
+                password='12345',
+                email='instructor@edx.org')
+            self.client2.login(username='testinstructor', password='12345')
+            role = CourseInstructorRole(self.course.id)
+            role.add_users(self.instructor)
+            self.student_user = UserFactory(
+                username='student_user',
+                password='12345',
+                email='student_test@edx.org')
+            self.client3.login(username='student_user', password='12345')
         EolVimeoVideo.objects.create(
             edx_video_id = self.video["edx_video_id"],
             user =self.user,
@@ -1075,6 +1102,17 @@ class TestEolVimeoView(UrlResetMixin, ModuleStoreTestCase):
             error_description = '',
             token='123asd456asd789asd',
             expiry_at=datetime.datetime.utcnow() - datetime.timedelta(seconds=301)
+        )
+        EolVimeoVideo.objects.create(
+            edx_video_id = self.video3["edx_video_id"],
+            user =self.user,
+            vimeo_video_id = '1122334455',
+            course_key = self.course.id,
+            url_vimeo = '',
+            status = 'upload_completed',
+            error_description = '',
+            token='123asd456asd789asd',
+            expiry_at=datetime.datetime.utcnow() + datetime.timedelta(seconds=300)
         )
 
     @patch('eol_vimeo.views.get_url_video')
@@ -1141,3 +1179,86 @@ class TestEolVimeoView(UrlResetMixin, ModuleStoreTestCase):
                 'videoid': self.video2["edx_video_id"],
                 'token': '123asd456asd789asd'})
         self.assertEqual(result.status_code, 400)
+    
+    def test_vimeo_update_picture_wrong_courseid(self):
+        """
+            Test vimeo_update_picture when course id is wrong
+        """
+        result = self.client.post(
+            reverse('vimeo_update_picture'),
+            data={
+                'videoid': self.video["edx_video_id"],
+                'course_id': 'course-v1:eol+Test101+2021'})
+        self.assertEqual(result.status_code, 400)
+
+    def test_vimeo_update_picture_wrong_videoid(self):
+        """
+            Test vimeo_update_picture when video id is wrong
+        """
+        result = self.client.post(
+            reverse('vimeo_update_picture'),
+            data={
+                'videoid': '456-456789-456',
+                'course_id': str(self.course.id)})
+        self.assertEqual(result.status_code, 400)
+
+    def test_vimeo_update_picture_no_params(self):
+        """
+            Test vimeo_update_picture when edx_video_id or token isn ot in url
+        """
+        result = self.client.post(
+            reverse('vimeo_update_picture'))
+        self.assertEqual(result.status_code, 400)
+
+    def testvimeo_update_picture_get(self):
+        """
+            Test vimeo_update_picture when is GET
+        """
+        result = self.client.get(
+            reverse('vimeo_update_picture'))
+        self.assertEqual(result.status_code, 400)
+    
+    def testvimeo_update_picture_annonimous_user(self):
+        """
+            Test vimeo_update_picture when user is annonimous
+        """
+        client = Client()
+        result = client.post(
+            reverse('vimeo_update_picture'),
+            data={
+                'videoid': self.video["edx_video_id"],
+                'course_id': str(self.course.id)})
+        self.assertEqual(result.status_code, 400)
+    
+    def testvimeo_update_picture_student_user(self):
+        """
+            Test vimeo_update_picture when user is student
+        """
+        result = self.client3.post(
+            reverse('vimeo_update_picture'),
+            data={
+                'videoid': self.video["edx_video_id"],
+                'course_id': str(self.course.id)})
+        self.assertEqual(result.status_code, 400)
+    
+    @patch('requests.get')
+    @override_settings(EOL_VIMEO_CLIENT_ID='1234567890asdfgh')
+    @override_settings(EOL_VIMEO_CLIENT_SECRET='1234567890asdfgh')
+    @override_settings(EOL_VIMEO_CLIENT_TOKEN='1234567890asdfgh')
+    def testvimeo_update_picture_instructor_user(self, get):
+        """
+            Test vimeo_update_picture when user is instructor
+        """
+        get_data = {'pictures': {'base_link': 'this is a picture url'}}
+        get.side_effect = [namedtuple("Request", ["status_code", "json"])(200, lambda:get_data),]
+        eolvimeo = EolVimeoVideo.objects.get(edx_video_id=self.video3["edx_video_id"], course_key=self.course.id)
+        self.assertEqual(eolvimeo.url_picture, '')
+        result = self.client2.post(
+            reverse('vimeo_update_picture'),
+            data={
+                'videoid': self.video3["edx_video_id"],
+                'course_id': str(self.course.id)})
+        self.assertEqual(result.status_code, 200)
+        self.assertTrue(result.json(), {'result':'success'})
+        eolvimeo = EolVimeoVideo.objects.get(edx_video_id=self.video3["edx_video_id"], course_key=self.course.id)
+        self.assertEqual(eolvimeo.url_picture, 'this is a picture url')

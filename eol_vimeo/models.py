@@ -28,6 +28,7 @@ class EolVimeoVideo(models.Model):
     vimeo_video_id = models.CharField(max_length=50, blank=True)
     course_key = CourseKeyField(max_length=255, default=None, blank=True)
     url_vimeo = models.CharField(max_length=255, blank=True)
+    url_picture = models.CharField(max_length=255, blank=True, default='')
     status = models.CharField(max_length=50, blank=True)
     error_description = models.TextField('Error Description', blank=True, null=True)
     token = models.CharField(max_length=50, default='', blank=True)

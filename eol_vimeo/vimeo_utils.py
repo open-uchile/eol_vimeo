@@ -13,6 +13,7 @@ from opaque_keys import InvalidKeyError
 from django.contrib.auth.models import User
 from django.urls import reverse
 from lms.djangoapps.courseware.access import has_access, get_user_role
+from lms.djangoapps.courseware.courses import get_course_with_access
 from collections import OrderedDict, defaultdict, deque
 from opaque_keys.edx.locator import CourseLocator, BlockUsageLocator
 from django.db import IntegrityError, transaction
@@ -58,6 +59,53 @@ def get_client_vimeo():
         secret=settings.EOL_VIMEO_CLIENT_SECRET
     )
     return client
+
+def is_course_staff(user, course_key):
+    """
+        Verify if the user is staff course
+    """
+    try:
+        course = get_course_with_access(user, "load", course_key)
+        return bool(has_access(user, 'staff', course))
+    except Exception:
+        return False
+
+def is_instructor(user, course_key):
+    """
+        Verify if the user is instructor
+    """
+    try:
+        course = get_course_with_access(user, "load", course_key)
+        return bool(has_access(user, 'instructor', course))
+    except Exception:
+        return False
+
+def validate_user(user, course_id):
+    """
+        Verify if the user have permission
+    """
+    access = False
+    course_key = CourseKey.from_string(course_id)
+    if not user.is_anonymous:
+        if user.is_staff:
+            access = True
+        if is_instructor(user, course_key):
+            access = True
+        if is_course_staff(user, course_key):
+            access = True
+    return access
+
+def validate_course(id_curso):
+    """
+        Verify if course.id exists
+    """
+    from openedx.core.djangoapps.content.course_overviews.models import CourseOverview
+    try:
+        aux = CourseKey.from_string(id_curso)
+        return CourseOverview.objects.filter(id=aux).exists()
+    except InvalidKeyError:
+        logger.error("EolVimeo - error validate course, invalid format: {}".format(id_curso))
+        return False
 
 def update_edxval_url(edx_video_id, video_url, file_size, file_name, duration, status):
     """
@@ -119,6 +167,28 @@ def get_video_vimeo(id_video):
     except Exception as e:
         logger.exception('EolVimeo - Exception: %s' % str(e))
         return {}
+
+def update_image(edx_video_id, course_key):
+    """
+        Update video picture from vimeo
+    """
+    video_vimeo = EolVimeoVideo.objects.get(edx_video_id=edx_video_id, course_key=course_key)
+    client = get_client_vimeo()
+    if client is None:
+        return {'result':'error', 'error':'Credentials are not defined'}
+    try:
+        response = client.get('/videos/{}'.format(video_vimeo.vimeo_video_id), params={"fields": "pictures"})
+        if response.status_code == 200:
+            data = response.json()
+            video_vimeo.url_picture = data['pictures']['base_link']
+            video_vimeo.save()
+            return {'result':'success'}
+        else:
+            logger.info('EolVimeo - The video does not exists, id_video_vimeo:{}, response: {}'.format(id_video, response.text))
+            return {'result':'error', 'error':'The video does not exists'}
+    except Exception as e:
+        logger.exception('EolVimeo - Exception: %s' % str(e))
+        return {'result':'error', 'error':'Error update video picture'}
 
 def move_to_folder(id_video, id_folder):
     """
@@ -418,7 +488,7 @@ def update_video_vimeo(course_id=None):
                             is_updated = update_edxval_url(video.edx_video_id, quality_video['link'], quality_video['size'], video_name, video_data['duration'], status_video)
                             if is_updated:
                                 logger.info('EolVimeo - Video updated completed, edx_video_id: {}'.format(video.edx_video_id))
-                                get_storage().delete(video.edx_video_id)
+                                #get_storage().delete(video.edx_video_id)
                             else:
                                 logger.info('EolVimeo - error update_video in edxval.api, edx_video_id: {}'.format(video.edx_video_id))
                                 video.error_description = 'No se pudo agregar el path vimeo del video al video en plataforma(error update_video in edxval.api). '
