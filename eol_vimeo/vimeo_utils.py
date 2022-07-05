@@ -274,8 +274,8 @@ def upload(id_file, domain, course_id):
             "Content-Type": "application/json",
             "Accept": 'application/vnd.vimeo.*+json;version=3.4'
         }
-        video_name = video.client_video_id.rstrip('.mp4')
-        video_name = video_name.rstrip('.mov')
+        video_name = video.client_video_id.replace('.mp4', '')
+        video_name = video_name.replace('.mov', '')
         url = "https://api.vimeo.com/me/videos"
         body = {
             "upload": {
@@ -464,7 +464,7 @@ def update_video_vimeo(course_id=None):
                     else:
                         quality_video = get_link_video(video_data)
                         now = timezone.now()
-                        video_name = video_data['name'].lstrip('{}_'.format(str(video.course_key)))
+                        video_name = video_data['name'].replace('{}_'.format(str(video.course_key)), '')
                         if quality_video is not None:
                             if quality_video['quality'] == 'hls':
                                 status_video = 'upload_completed'
