@@ -2,7 +2,7 @@
 
 ![https://github.com/eol-uchile/eol_vimeo/actions](https://github.com/eol-uchile/eol_vimeo/workflows/Python%20application/badge.svg) ![Coverage Status](https://github.com/eol-uchile/eol_vimeo/blob/master/coverage-badge.svg)
 
-Upload videos to Vimeo
+Upload videos to Vimeo.
 
 # Install App
 
