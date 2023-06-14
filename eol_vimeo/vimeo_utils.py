@@ -475,15 +475,15 @@ def update_video_vimeo(course_id=None):
                                 error_description = 'Vimeo todavia esta procesando el video.'
                                 status_video = 'vimeo_encoding'
                             else:
-                                if quality_video['public_name'] == "HD 720p":
+                                if quality_video['quality'] == "hd":
                                     status_video = 'upload_completed'
                                     error_description = 'upload_completed'
                                 else:
                                     now = timezone.now()
                                     if now > (video.expiry_at + datetime.timedelta(hours=2)):
                                         if now > (video.expiry_at + datetime.timedelta(hours=24)):
-                                            status_video = 'upload_failed'
-                                            error_description = 'upload_failed, Lleva mas de 24 hrs procesando o video no tiene formato HD'
+                                            status_video = 'upload_completed'
+                                            error_description = 'upload_completed, Lleva mas de 24 hrs procesando o video no tiene formato HD'
                                         else:
                                             status_video = 'upload_completed_encoding'
                                             error_description = 'upload_completed_encoding, Lleva mas de 2 hrs procesando.'

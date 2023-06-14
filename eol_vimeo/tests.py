@@ -930,6 +930,35 @@ class TestEolVimeo(UrlResetMixin, ModuleStoreTestCase):
         vimeo_utils.update_video_vimeo()
         eolvimeo = EolVimeoVideo.objects.get(edx_video_id=self.video["edx_video_id"])
         video = get_video_info(self.video["edx_video_id"])
+        self.assertEqual(video['status'], 'upload_completed')
+        self.assertEqual(eolvimeo.status, 'upload_completed')
+        self.assertEqual(eolvimeo.error_description, 'upload_completed, Lleva mas de 24 hrs procesando o video no tiene formato HD')
+
+    @patch('requests.get')
+    @patch("eol_vimeo.vimeo_utils.get_storage")
+    @override_settings(EOL_VIMEO_CLIENT_ID='1234567890asdfgh')
+    @override_settings(EOL_VIMEO_CLIENT_SECRET='1234567890asdfgh')
+    @override_settings(EOL_VIMEO_CLIENT_TOKEN='1234567890asdfgh')
+    def test_update_video_vimeo_vimeo_transcode_expiry_2(self, get_storage, get):
+        """
+            Test update_video_vimeo when the video takes more than 24 hours processing and only have hls quality
+        """
+        get_storage.configure_mock(open=Mock(), delete=Mock())
+        EolVimeoVideo.objects.create(
+            edx_video_id = self.video["edx_video_id"],
+            user =self.user,
+            vimeo_video_id = '1122334455',
+            course_key = self.course.id,
+            url_vimeo = '',
+            status = 'vimeo_upload',
+            error_description = '',
+            expiry_at=(datetime.datetime.utcnow() - datetime.timedelta(hours=25))
+        )
+        get_data = {'name':self.video['client_video_id'], 'status':'available', 'transcode': {'status': 'complete'}, 'duration':self.video['duration'], 'upload': {'status': 'complete'}, 'files': [{'quality': 'hls', 'type': 'source', 'width': 0, 'height': 0, 'link': 'https://player.vimeo.com/external/1122233344', 'created_time': '2021-06-08T14:21:04+00:00', 'fps': 30, 'size': 0, 'md5': None, 'public_name': 'SD 640p', 'size_short': ''}]}
+        get.side_effect = [namedtuple("Request", ["status_code", "json"])(200, lambda:get_data),]
+        vimeo_utils.update_video_vimeo()
+        eolvimeo = EolVimeoVideo.objects.get(edx_video_id=self.video["edx_video_id"])
+        video = get_video_info(self.video["edx_video_id"])
         self.assertEqual(video['status'], 'upload_failed')
         self.assertEqual(eolvimeo.status, 'upload_failed')
         self.assertEqual(eolvimeo.error_description, 'upload_failed, Lleva mas de 24 hrs procesando o video no tiene formato HD')
