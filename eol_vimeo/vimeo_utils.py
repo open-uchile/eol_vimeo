@@ -111,6 +111,8 @@ def update_edxval_url(edx_video_id, video_url, file_size, file_name, duration, s
     """
         Update video in edxval model with vimeo url
     """
+    if 'https://player.vimeo.com/progressive_redirect/playback' in video_url:
+        video_url = video_url.replace('https://player.vimeo.com/progressive_redirect/playback','')
     data = {
         "encoded_videos": [
             {
